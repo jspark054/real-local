@@ -1,3 +1,12 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="format-detection" content="telephone=no">
+<meta name="HandheldFriendly" content="true">
+<meta name="MobileOptimized" content="width">
+<meta name="theme-color" content="#FBF7EF">
 <title>REAL LOCAL — Hi-Fi Prototype</title>
 <style>
   /*
@@ -30,7 +39,7 @@
   }
 
   *{box-sizing:border-box;}
-  html,body{height:100%;}
+  html,body{height:100%;overflow-x:hidden;width:100%;max-width:100%;}
   body{
     margin:0;
     background:var(--paper-deep);
@@ -43,7 +52,7 @@
   img,svg{display:block;}
   button{font:inherit;}
 
-  .wrap{max-width:480px;margin:0 auto;padding:0;min-height:100vh;background:var(--paper);box-shadow:0 0 40px rgba(42,33,23,.08);}
+  .wrap{max-width:480px;margin:0 auto;padding:0;min-height:100vh;background:var(--paper);box-shadow:0 0 40px rgba(42,33,23,.08);overflow-x:hidden;}
 
   section.block{margin-bottom:0;}
 
@@ -327,6 +336,8 @@
 
 
 </style>
+</head>
+<body>
 
 <div class="wrap">
 
@@ -1059,3 +1070,5 @@
   renderHome();
   renderSaved();
 </script>
+</body>
+</html>
