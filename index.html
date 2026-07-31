@@ -54,8 +54,7 @@
   button{font:inherit;}
 
   .wrap{max-width:480px;margin:0 auto;padding:0;min-height:100vh;background:var(--paper);box-shadow:0 0 40px rgba(42,33,23,.08);overflow-x:hidden;}
-  @media (min-width:768px){ .wrap{max-width:900px;} }
-  @media (min-width:1280px){ .wrap{max-width:1200px;} }
+  /* PC에서도 모바일 폭(480px) 고정 유지 — 클라이언트 요청 반영 */
 
   section.block{margin-bottom:0;}
 
@@ -81,7 +80,7 @@
   .phone .notch{display:none;}
 
   .screen-stack{
-    position:relative;width:100%;height:100vh;border-radius:0;overflow:hidden;background:var(--paper);
+    position:relative;width:100%;height:100vh;height:100dvh;border-radius:0;overflow:hidden;background:var(--paper);
   }
   .app-screen{
     position:absolute;inset:0;overflow-y:auto;background:var(--paper);
@@ -97,6 +96,47 @@
     display:block;
   }
   .app-screen.detail.is-open{transform:translateX(0);}
+
+  /* ---------- 장소 상세: 하단에서 올라오는 바텀시트 팝업 ---------- */
+  /* 바깥 래퍼는 화면 전체를 덮되 투명 + 클릭 통과, 안쪽 카드만 실제로 보이고 하단에 고정 */
+  .app-screen.detail.sheet{
+    background:transparent;
+    overflow:visible;
+    pointer-events:none;
+    z-index:31;
+    transform:none;
+    transition:none;
+    visibility:hidden;
+  }
+  .app-screen.detail.sheet.is-open{transform:none;visibility:visible;}
+  .sheet-inner{
+    position:fixed;
+    left:50%;bottom:0;transform:translateX(-50%) translateY(100%);
+    pointer-events:auto;
+    width:100%;
+    max-width:480px;
+    max-height:88vh;
+    max-height:88dvh;
+    overflow-y:auto;
+    scrollbar-width:none;
+    background:var(--paper);
+    border-radius:20px 20px 0 0;
+    box-shadow:var(--shadow-lg);
+    transition:transform .32s cubic-bezier(.22,.61,.36,1);
+  }
+  .sheet-inner::-webkit-scrollbar{display:none;}
+  .app-screen.detail.sheet.is-open .sheet-inner{transform:translateX(-50%) translateY(0);}
+  .sheet-handle{
+    position:sticky;top:0;z-index:2;background:var(--paper);
+    display:flex;justify-content:center;padding:10px 0 4px;
+  }
+  .sheet-handle span{width:36px;height:4px;border-radius:999px;background:var(--line);display:block;}
+
+  .modal-backdrop{
+    position:absolute;inset:0;background:rgba(28,20,12,.5);
+    z-index:29;opacity:0;pointer-events:none;transition:opacity .28s ease;
+  }
+  .modal-backdrop.is-open{opacity:1;pointer-events:auto;}
 
   /* ---------- top bar / tab bar chrome ---------- */
   .topbar{
@@ -121,10 +161,13 @@
   }
 
   .tabbar{
-    position:sticky;bottom:0;z-index:20;
+    position:fixed;left:50%;bottom:0;transform:translateX(-50%);z-index:20;
+    width:100%;max-width:480px;
     display:flex;justify-content:space-around;background:var(--card);
-    border-top:1px solid var(--line);padding:10px 6px 14px;
+    border-top:1px solid var(--line);padding:10px 6px calc(14px + env(safe-area-inset-bottom,0px));
   }
+  /* 고정 탭바에 콘텐츠가 가려지지 않도록 하단 여백 확보 */
+  .app-screen.root{padding-bottom:74px;}
   .tab-item{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:9.5px;color:var(--ink-faint);background:none;border:none;cursor:pointer;padding:2px 14px;}
   .tab-item svg{width:19px;height:19px;stroke:var(--ink-faint);fill:none;stroke-width:1.8;}
   .tab-item.active{color:var(--accent-strong);font-weight:700;}
@@ -150,8 +193,7 @@
 
   /* ---------- home: card list ---------- */
   .home-list{padding:4px 16px 18px;display:grid;grid-template-columns:1fr;gap:16px;}
-  @media (min-width:768px){ .home-list{grid-template-columns:repeat(2, minmax(0,1fr));} }
-  @media (min-width:1280px){ .home-list{grid-template-columns:repeat(3, minmax(0,1fr));} }
+  /* PC에서도 1열 카드 리스트 유지 — 모바일 룩 통일 */
   .map-card{
     background:var(--card);border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow-sm);
     cursor:pointer;border:1px solid var(--line-soft);transition:box-shadow .2s, transform .2s;
@@ -189,7 +231,7 @@
   /* ---------- detail ---------- */
   .hero-cover{position:relative;height:190px;}
   .hero-actions{position:absolute;top:14px;right:14px;display:flex;gap:8px;}
-  .detail-head{padding:16px 18px 4px;}
+  .detail-head{padding:16px 16px 4px;}
   .detail-title{font-size:19px;font-weight:800;margin:0 0 5px;letter-spacing:-.01em;}
   .detail-desc{font-size:13px;color:var(--ink-soft);margin:0 0 6px;line-height:1.55;}
   .detail-meta{font-size:12px;color:var(--ink-faint);}
@@ -220,7 +262,7 @@
   }
   .spot-row.is-active{background:var(--accent-wash);border-color:var(--accent-wash-strong);}
   .spot-thumb{
-    width:56px;aspect-ratio:4/3;border-radius:12px;flex:0 0 auto;position:relative;
+    width:56px;height:56px;border-radius:12px;flex:0 0 auto;position:relative;align-self:flex-start;
     display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:14px;
   }
   .spot-thumb .num{
@@ -275,16 +317,47 @@
   .review-item .rtext{color:var(--ink-soft);}
 
   /* ---------- saved ---------- */
-  .seg{display:flex;margin:4px 16px 14px;background:var(--paper-deep);border-radius:999px;padding:3px;}
-  .seg button{flex:1;border:none;background:none;padding:8px 0;border-radius:999px;font-size:12px;font-weight:700;color:var(--ink-soft);cursor:pointer;}
-  .seg button.active{background:var(--card);color:var(--ink);box-shadow:var(--shadow-sm);}
+  .seg,.admin-seg{display:flex;margin:4px 16px 14px;background:var(--paper-deep);border-radius:999px;padding:3px;}
+  .seg button,.admin-seg button{flex:1;border:none;background:none;padding:8px 0;border-radius:999px;font-size:12px;font-weight:700;color:var(--ink-soft);cursor:pointer;}
+  .seg button.active,.admin-seg button.active{background:var(--card);color:var(--ink);box-shadow:var(--shadow-sm);}
+  .admin-panel{display:none;}
+  .admin-panel.active{display:block;}
+  .admin-filter-chip,.filter-chip{padding:5px 12px;font-size:11px;font-weight:700;border-radius:999px;border:1.5px solid var(--line);background:var(--card);color:var(--ink-soft);cursor:pointer;}
+  .admin-filter-chip.active,.filter-chip.active{background:var(--ink);border-color:var(--ink);color:#fff;}
+  .admin-role-select,.admin-status-select{font-size:11px;font-weight:700;font-family:inherit;padding:6px 8px;border-radius:var(--radius-sm);border:1.5px solid var(--line);background:var(--card);color:var(--ink);}
+  .curator-credit{display:flex;align-items:center;gap:6px;margin-top:9px;}
+  .curator-credit .mini-avatar{width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:#fff;flex-shrink:0;}
+  .curator-credit .curator-name{font-size:11px;font-weight:700;color:var(--ink-soft);}
+
+  .map-cat-chip{
+    padding:8px 16px;border-radius:999px;font-size:12.5px;font-weight:700;cursor:pointer;
+    border:1.5px solid var(--line);background:none;color:var(--ink-soft);
+  }
+  .map-cat-chip.active{background:var(--ink);border-color:var(--ink);color:#fff;}
+  .map-category-badge{
+    display:inline-block;font-size:11px;font-weight:700;color:var(--ink-soft);
+    background:var(--paper-deep);padding:3px 10px;border-radius:999px;
+  }
+  .form-step{
+    display:flex;align-items:center;gap:8px;margin-bottom:14px;
+  }
+  .form-step .num{
+    width:20px;height:20px;border-radius:50%;background:var(--accent);color:#fff;
+    font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  }
+  .form-step .num.done{background:var(--ink-faint);}
+  .form-step .label{font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-soft);}
+  .places-empty-state{
+    border:1.5px dashed var(--line);border-radius:var(--radius-md);padding:22px 16px;text-align:center;
+    font-size:12.5px;color:var(--ink-faint);line-height:1.6;
+  }
   .saved-panel{padding:0 16px 16px;display:none;flex-direction:column;gap:12px;}
   .saved-panel.active{display:flex;}
   .saved-spot-row{display:flex;gap:10px;align-items:center;background:var(--card);border:1px solid var(--line-soft);border-radius:var(--radius-md);padding:9px;}
   .empty-hint{font-size:12px;color:var(--ink-faint);text-align:center;padding:26px 10px;}
 
   /* ---------- generic form bits for static screens ---------- */
-  .form-screen{padding:20px 18px;}
+  .form-screen{padding:20px 16px;}
   .field{margin-bottom:12px;}
   .field label{display:block;font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:5px;}
   .field input, .field textarea{
@@ -355,7 +428,7 @@
   .auth-modal{width:100%;max-width:340px;background:var(--card);border-radius:var(--radius-lg);padding:22px 20px;box-shadow:var(--shadow-lg);}
   .auth-modal h3{margin:0 0 4px;font-size:16px;font-weight:800;color:var(--ink);}
   .auth-modal p.sub{margin:0 0 16px;font-size:12px;color:var(--ink-soft);}
-  .auth-modal input{width:100%;height:38px;border:1px solid var(--line);border-radius:10px;padding:0 12px;font-size:13px;margin-bottom:8px;box-sizing:border-box;background:var(--card-wash);color:var(--ink);}
+  .auth-modal input{width:100%;height:38px;border:1px solid var(--line);border-radius:var(--radius-sm);padding:0 12px;font-size:13px;margin-bottom:8px;box-sizing:border-box;background:var(--card-wash);color:var(--ink);}
   .auth-modal .err{font-size:12px;color:var(--danger);min-height:14px;margin-bottom:6px;}
   .auth-tabs{display:flex;gap:6px;margin-bottom:14px;}
   .auth-tab{flex:1;text-align:center;padding:7px 0;font-size:12px;font-weight:700;border-radius:8px;cursor:pointer;color:var(--ink-soft);}
@@ -384,16 +457,21 @@
               <p class="hero-sub">Real places. Real recommendations.</p>
               <p class="hero-stats" id="heroStats"></p>
             </div>
+            <div id="homeRegionChips" style="display:flex;flex-wrap:wrap;gap:6px;padding:0 16px 14px;"></div>
             <div class="home-list" id="homeList"></div>
             <div style="height:2px;"></div>
           </div>
 
           <!-- SAVED -->
           <div class="app-screen root" id="screen-saved">
-            <div class="topbar"><div class="wordmark">Saved</div><div style="width:34px;"></div></div>
+            <div class="topbar">
+              <button class="back-btn" data-backhome aria-label="back to home"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button>
+              <div class="wordmark">Saved</div>
+              <div style="width:44px;"></div>
+            </div>
             <div class="seg">
               <button class="active" data-seg="maps">Saved maps</button>
-              <button data-seg="spots">Saved spots</button>
+              <button data-seg="spots">Saved places</button>
             </div>
             <div class="saved-panel active" id="savedMapsPanel"></div>
             <div class="saved-panel" id="savedSpotsPanel"></div>
@@ -401,8 +479,158 @@
 
           <!-- MY (role demo, no real auth) -->
           <div class="app-screen root" id="screen-my">
-            <div class="topbar"><div class="wordmark">My</div><div style="width:34px;"></div></div>
-            <div id="myContent" style="padding:16px 18px;"></div>
+            <div class="topbar">
+              <button class="back-btn" data-backhome aria-label="back to home"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button>
+              <div class="wordmark">My</div>
+              <div style="width:44px;"></div>
+            </div>
+            <div id="myContent" style="padding:16px 16px;"></div>
+          </div>
+
+          <!-- MAP EDITOR (크리에이터: 맵 생성/수정 + 장소 관리) -->
+          <div class="app-screen detail" id="screen-map-editor">
+            <div class="topbar" style="position:sticky;top:0;z-index:2;">
+              <button class="back-btn" id="mapEditorBackBtn" aria-label="back"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button>
+              <div class="wordmark" id="mapEditorTitle">New map</div>
+              <div style="width:44px;"></div>
+            </div>
+            <div style="padding:12px 16px;">
+              <div id="mapEditorStatusBadge" style="margin-bottom:14px;"></div>
+
+              <div class="form-step">
+                <span class="num" id="mapEditorStep1Num">1</span>
+                <span class="label">Map details</span>
+              </div>
+
+              <label style="font-size:11px;font-weight:800;color:var(--ink-soft);">Title</label>
+              <input id="mapEditorTitleInput" type="text" placeholder="e.g. Lost in Mangwon-Dong" style="width:100%;box-sizing:border-box;padding:11px 12px;border:1.5px solid var(--line);border-radius:var(--radius-sm);font-size:14px;margin:6px 0 14px;font-family:inherit;">
+
+              <label style="font-size:11px;font-weight:800;color:var(--ink-soft);">Description</label>
+              <textarea id="mapEditorDescInput" rows="2" placeholder="One line about this map" style="width:100%;box-sizing:border-box;padding:11px 12px;border:1.5px solid var(--line);border-radius:var(--radius-sm);font-size:14px;margin:6px 0 14px;font-family:inherit;resize:vertical;"></textarea>
+
+              <label style="font-size:11px;font-weight:800;color:var(--ink-soft);">City</label>
+              <input id="mapEditorCityInput" type="text" placeholder="e.g. Seoul" style="width:100%;box-sizing:border-box;padding:11px 12px;border:1.5px solid var(--line);border-radius:var(--radius-sm);font-size:14px;margin:6px 0 18px;font-family:inherit;">
+
+              <label style="font-size:11px;font-weight:800;color:var(--ink-soft);">Cover image</label>
+              <div style="display:flex;gap:12px;align-items:center;margin:8px 0 28px;">
+                <div id="mapEditorCoverPreview" style="width:64px;height:64px;flex-shrink:0;border-radius:14px;border:1.5px solid var(--line);background-color:var(--card);background-size:cover;background-position:center;"></div>
+                <button type="button" class="btn ghost" id="mapEditorUploadBtn" style="width:auto;flex:1;">Upload image</button>
+                <input type="file" id="mapEditorCoverFile" accept="image/*" style="display:none;">
+              </div>
+              <input type="hidden" id="mapEditorCoverInput" value="">
+
+              <button class="btn primary" id="mapEditorSaveBtn" style="width:100%;margin-bottom:8px;">Save map &amp; continue</button>
+              <button class="btn primary" id="mapEditorSubmitBtn" style="width:100%;margin-bottom:26px;display:none;">Submit for review</button>
+
+              <div id="mapEditorRejectNote" style="display:none;background:#F3E3DC;border:1px solid var(--line);border-radius:var(--radius-sm);padding:12px;font-size:12px;color:var(--ink-soft);margin-bottom:18px;"></div>
+
+              <div style="height:1px;background:var(--line);margin-bottom:22px;"></div>
+
+              <div class="form-step" id="mapEditorStep2" style="justify-content:space-between;scroll-margin-top:20px;padding-top:8px;">
+                <div class="form-step" style="margin-bottom:0;">
+                  <span class="num done" id="mapEditorStep2Num">2</span>
+                  <span class="label">Places</span>
+                </div>
+                <button class="btn ghost" id="mapEditorAddSpotBtn" style="width:auto;flex-shrink:0;padding:8px 14px;font-size:12px;display:none;">+ Add place</button>
+              </div>
+              <div id="mapEditorSpotList"></div>
+              <div style="height:40px;"></div>
+            </div>
+          </div>
+
+          <!-- SPOT EDITOR (바텀시트 - 장소 추가/수정) -->
+          <div class="app-screen detail sheet" id="screen-spot-editor">
+            <div class="sheet-inner">
+              <div class="sheet-handle"><span></span></div>
+              <div style="padding:0 16px 24px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+                  <div style="font-size:15px;font-weight:800;color:var(--ink);" id="spotEditorTitle">Add place</div>
+                  <button class="back-btn" id="spotEditorCloseBtn" aria-label="close"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+                </div>
+
+                <label style="font-size:11px;font-weight:800;color:var(--ink-soft);">Name</label>
+                <input id="spotEditorName" type="text" placeholder="Place name" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1.5px solid var(--line);border-radius:var(--radius-sm);font-size:14px;margin:5px 0 12px;font-family:inherit;">
+
+                <label style="font-size:11px;font-weight:800;color:var(--ink-soft);">Category</label>
+                <select id="spotEditorCategory" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1.5px solid var(--line);border-radius:var(--radius-sm);font-size:14px;margin:5px 0 12px;font-family:inherit;background:var(--paper);">
+                  <option value="restaurant">Restaurant</option>
+                  <option value="cafe">Cafe</option>
+                  <option value="bar">Bar</option>
+                  <option value="dessert">Dessert</option>
+                  <option value="other">Other</option>
+                </select>
+
+                <label style="font-size:11px;font-weight:800;color:var(--ink-soft);">Description / tip</label>
+                <textarea id="spotEditorDesc" rows="2" placeholder="Why this place" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1.5px solid var(--line);border-radius:var(--radius-sm);font-size:14px;margin:5px 0 12px;font-family:inherit;resize:vertical;"></textarea>
+
+                <label style="font-size:11px;font-weight:800;color:var(--ink-soft);">Address / place name</label>
+                <div style="display:flex;gap:8px;margin:5px 0 6px;">
+                  <input id="spotEditorAddress" type="text" placeholder="Place name or address (e.g. Euljiro Sindo Restaurant)" style="flex:1;min-width:0;box-sizing:border-box;padding:10px 12px;border:1.5px solid var(--line);border-radius:var(--radius-sm);font-size:14px;font-family:inherit;">
+                  <button type="button" id="spotEditorFindLocBtn" class="btn ghost" style="width:auto;height:42px;box-sizing:border-box;flex-shrink:0;padding:0 16px;font-size:13px;white-space:nowrap;">Find location</button>
+                </div>
+                <div id="spotEditorLocConfirm" style="font-size:11px;color:var(--accent-strong);font-weight:700;margin-bottom:10px;display:none;">✓ Location confirmed</div>
+
+                <label style="font-size:11px;font-weight:800;color:var(--ink-soft);">Google Maps link (optional)</label>
+                <input id="spotEditorMapsUrl" type="text" placeholder="Paste a Google Maps link if you have one" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1.5px solid var(--line);border-radius:var(--radius-sm);font-size:14px;margin:5px 0 18px;font-family:inherit;">
+
+                <div id="spotEditorLatLngWrap" style="display:none;">
+                  <label style="font-size:11px;font-weight:800;color:var(--ink-soft);">Latitude / Longitude (only if you need to adjust manually)</label>
+                  <div style="display:flex;gap:8px;margin:5px 0 14px;">
+                    <input id="spotEditorLat" type="number" step="any" placeholder="37.5665" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1.5px solid var(--line);border-radius:var(--radius-sm);font-size:14px;font-family:inherit;">
+                    <input id="spotEditorLng" type="number" step="any" placeholder="126.9780" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1.5px solid var(--line);border-radius:var(--radius-sm);font-size:14px;font-family:inherit;">
+                  </div>
+                </div>
+                <button type="button" id="spotEditorManualLatLngBtn" style="display:block;background:none;border:none;padding:0;font-size:11px;color:var(--ink-faint);text-decoration:underline;cursor:pointer;margin-bottom:18px;">Can't find it? Enter coordinates manually</button>
+
+                <label style="font-size:11px;font-weight:800;color:var(--ink-soft);">Cover image</label>
+                <div style="display:flex;gap:12px;align-items:center;margin:8px 0 18px;">
+                  <div id="spotEditorCoverPreview" style="width:56px;height:56px;flex-shrink:0;border-radius:12px;border:1.5px solid var(--line);background-color:var(--card);background-size:cover;background-position:center;"></div>
+                  <button type="button" class="btn ghost" id="spotEditorUploadBtn" style="width:auto;flex:1;">Upload image</button>
+                  <input type="file" id="spotEditorCoverFile" accept="image/*" style="display:none;">
+                </div>
+                <input type="hidden" id="spotEditorImageUrl" value="">
+
+                <button class="btn primary" id="spotEditorSaveBtn" style="width:100%;margin-bottom:8px;">Save place</button>
+                <button class="btn ghost" id="spotEditorDeleteBtn" style="width:100%;display:none;color:#B23B3B;">Delete place</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- ADMIN -->
+          <div class="app-screen root" id="screen-admin">
+            <div class="topbar">
+              <button class="back-btn" id="adminBackBtn" aria-label="back"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button>
+              <div class="wordmark">Admin</div>
+              <div style="width:44px;"></div>
+            </div>
+            <div class="admin-seg">
+              <button class="active" data-adminseg="review">To review</button>
+              <button data-adminseg="maps">All maps</button>
+              <button data-adminseg="creators">Creators</button>
+            </div>
+
+            <!-- To review panel -->
+            <div class="admin-panel active" id="adminReviewPanel">
+              <div id="adminReviewList" style="padding:0 16px 14px;"></div>
+            </div>
+
+            <!-- All maps panel -->
+            <div class="admin-panel" id="adminAllMapsPanel">
+              <div style="padding:0 16px 10px;">
+                <input id="adminMapSearchInput" type="text" placeholder="Search maps by title…" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1.5px solid var(--line);border-radius:var(--radius-sm);font-size:13px;font-family:inherit;margin-bottom:10px;">
+                <div id="adminMapStatusChips" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:4px;"></div>
+              </div>
+              <div id="adminAllMapsList" style="padding:6px 16px 14px;"></div>
+            </div>
+
+            <!-- Creators / accounts panel -->
+            <div class="admin-panel" id="adminCreatorsPanel">
+              <div style="padding:0 16px 10px;">
+                <input id="adminUserSearchInput" type="text" placeholder="Search accounts by email…" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1.5px solid var(--line);border-radius:var(--radius-sm);font-size:13px;font-family:inherit;margin-bottom:10px;">
+                <div id="adminUserRoleChips" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:4px;"></div>
+              </div>
+              <div id="adminCreatorsList" style="padding:6px 16px 14px;"></div>
+            </div>
           </div>
 
           <!-- DETAIL -->
@@ -425,6 +653,7 @@
 
             <div class="detail-head" style="position:relative;">
               <div class="creator-line" id="creatorLine"></div>
+              <span id="detailCategoryBadge" class="map-category-badge" style="display:none;margin-bottom:6px;"></span>
               <h3 class="detail-title" id="detailTitle"></h3>
               <p class="detail-desc" id="detailDesc"></p>
               <div class="detail-meta" id="detailMeta"></div>
@@ -462,58 +691,62 @@
             <div style="height:8px;"></div>
           </div>
 
-        </div>
-
-        <div class="app-screen detail" id="screen-spot-detail" style="z-index:11;">
-          <div class="hero-cover" id="spotDetailCover" style="height:210px;">
-            <div id="spotDetailCoverArt" style="position:absolute;inset:0;overflow:hidden;"></div>
-            <div style="position:absolute;top:0;left:0;right:0;display:flex;justify-content:space-between;align-items:center;padding:14px;box-sizing:border-box;z-index:2;">
-              <button class="back-btn" id="spotBackBtn" aria-label="back" style="flex-shrink:0;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button>
-              <div style="display:flex;gap:8px;flex-shrink:0;">
-                <button class="icon-btn on-cover" id="spotSaveBtn" aria-label="save spot">
-                  <svg width="15" height="15" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M12 21s-6.7-4.35-9.33-8.36C.86 9.9 1.6 6.6 4.3 5.1 6.4 3.94 9 4.5 12 7.5c3-3 5.6-3.56 7.7-2.4 2.7 1.5 3.44 4.8 1.63 7.54C18.7 16.65 12 21 12 21z"/></svg>
-                </button>
-                <button class="icon-btn on-cover" id="spotShareBtn" aria-label="share spot">
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v11M8 7l4-4 4 4M5 15v4a2 2 0 002 2h10a2 2 0 002-2v-4"/></svg>
-                </button>
+          <div class="app-screen detail sheet" id="screen-spot-detail">
+            <div class="sheet-inner">
+              <div class="sheet-handle"><span></span></div>
+              <div class="hero-cover" id="spotDetailCover" style="height:210px;">
+                <div id="spotDetailCoverArt" style="position:absolute;inset:0;overflow:hidden;"></div>
+                <div style="position:absolute;top:0;left:0;right:0;display:flex;justify-content:space-between;align-items:center;padding:14px;box-sizing:border-box;z-index:2;">
+                  <button class="back-btn" id="spotBackBtn" aria-label="close" style="flex-shrink:0;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+                  <div style="display:flex;gap:8px;flex-shrink:0;">
+                    <button class="icon-btn on-cover" id="spotSaveBtn" aria-label="save place">
+                      <svg width="15" height="15" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M12 21s-6.7-4.35-9.33-8.36C.86 9.9 1.6 6.6 4.3 5.1 6.4 3.94 9 4.5 12 7.5c3-3 5.6-3.56 7.7-2.4 2.7 1.5 3.44 4.8 1.63 7.54C18.7 16.65 12 21 12 21z"/></svg>
+                    </button>
+                    <button class="icon-btn on-cover" id="spotShareBtn" aria-label="share place">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v11M8 7l4-4 4 4M5 15v4a2 2 0 002 2h10a2 2 0 002-2v-4"/></svg>
+                    </button>
+                  </div>
+                </div>
               </div>
+
+              <div class="detail-head">
+                <div class="creator-line" id="spotPartOf" style="cursor:pointer;color:var(--accent-strong);font-weight:700;font-size:12px;"></div>
+                <h3 class="detail-title" id="spotDetailName"></h3>
+                <div id="spotDetailNameKo" style="font-size:12px;color:var(--ink-faint);margin:-2px 0 6px;"></div>
+                <span id="spotCategoryBadge" style="display:none;font-size:11px;font-weight:700;background:var(--accent-wash);color:var(--accent-strong);padding:3px 9px;border-radius:999px;"></span>
+              </div>
+
+              <div style="padding:0 16px 8px;">
+                <div style="font-size:13px;font-weight:800;color:var(--ink);margin-bottom:4px;">Why this place</div>
+                <p style="font-size:13px;color:var(--ink-soft);line-height:1.6;margin:0 0 18px;" id="spotDetailTip"></p>
+
+                <div id="spotGoodToKnowWrap">
+                  <div style="font-size:13px;font-weight:800;color:var(--ink);margin-bottom:8px;">Good to know</div>
+                  <div id="spotGoodToKnow" style="margin-bottom:18px;"></div>
+                </div>
+
+                <a id="spotGmapsBtn" class="btn primary" style="display:flex;align-items:center;justify-content:center;gap:6px;text-decoration:none;box-sizing:border-box;" target="_blank" rel="noopener">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6M15 3h6v6"/></svg>
+                  Open in Google Maps
+                </a>
+
+                <p style="font-size:11px;color:var(--ink-faint);margin-top:14px;line-height:1.5;">Hours and contact info are provided by the creator. Please check before visiting.</p>
+              </div>
+
+              <div style="height:calc(20px + env(safe-area-inset-bottom,0px));"></div>
             </div>
           </div>
 
-          <div class="detail-head">
-            <div class="creator-line" id="spotPartOf" style="cursor:pointer;color:var(--accent-strong);font-weight:700;font-size:12px;"></div>
-            <h3 class="detail-title" id="spotDetailName"></h3>
-            <div id="spotDetailNameKo" style="font-size:12px;color:var(--ink-faint);margin:-2px 0 6px;"></div>
-            <span id="spotCategoryBadge" style="display:none;font-size:11px;font-weight:700;background:var(--accent-wash);color:var(--accent-strong);padding:3px 9px;border-radius:999px;"></span>
-          </div>
+          <div class="modal-backdrop" id="modalBackdrop"></div>
 
-          <div style="padding:0 18px 8px;">
-            <div style="font-size:13px;font-weight:800;color:var(--ink);margin-bottom:4px;">Why this place</div>
-            <p style="font-size:13px;color:var(--ink-soft);line-height:1.6;margin:0 0 18px;" id="spotDetailTip"></p>
-
-            <div id="spotGoodToKnowWrap">
-              <div style="font-size:13px;font-weight:800;color:var(--ink);margin-bottom:8px;">Good to know</div>
-              <div id="spotGoodToKnow" style="margin-bottom:18px;"></div>
-            </div>
-
-            <a id="spotGmapsBtn" class="btn primary" style="display:flex;align-items:center;justify-content:center;gap:6px;text-decoration:none;box-sizing:border-box;" target="_blank" rel="noopener">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6M15 3h6v6"/></svg>
-              Open in Google Maps
-            </a>
-
-            <p style="font-size:11px;color:var(--ink-faint);margin-top:14px;line-height:1.5;">Hours and contact info are provided by the creator. Please check before visiting.</p>
-          </div>
-
-          <div style="height:90px;"></div>
         </div>
-
         <div class="tabbar" id="tabbar">
           <button class="tab-item active" data-tab="home">
             <svg viewBox="0 0 24 24"><path d="M4 11l8-7 8 7M6 10v9a1 1 0 001 1h3v-6h4v6h3a1 1 0 001-1v-9"/></svg>
             Home
           </button>
           <button class="tab-item" data-tab="saved">
-            <svg viewBox="0 0 24 24"><path d="M6 3h12v18l-6-4-6 4V3z"/></svg>
+            <svg viewBox="0 0 24 24"><path d="M12 21s-6.7-4.35-9.33-8.36C.86 9.9 1.6 6.6 4.3 5.1 6.4 3.94 9 4.5 12 7.5c3-3 5.6-3.56 7.7-2.4 2.7 1.5 3.44 4.8 1.63 7.54C18.7 16.65 12 21 12 21z"/></svg>
             Saved
           </button>
           <button class="tab-item" data-tab="my">
@@ -537,7 +770,7 @@
       <div class="auth-tab" id="tabSignup">Sign up</div>
     </div>
     <h3 id="authTitle">Log in to REAL LOCAL</h3>
-    <p class="sub" id="authSub">Save maps, save spots, and leave reviews.</p>
+    <p class="sub" id="authSub">Save maps, save places, and leave reviews.</p>
     <input type="email" id="authEmail" placeholder="name@email.com">
     <input type="password" id="authPassword" placeholder="Password (min 8 characters)">
     <div class="err" id="authErr"></div>
@@ -563,19 +796,30 @@
   async function loadMapsFromSupabase(){
     var { data: maps, error: mapsErr } = await sb
       .from('maps')
-      .select('id, title, description, city, saved_count, review_count')
+      .select('id, title, description, city, saved_count, review_count, created_at, cover_image_url, category, creator_id')
       .eq('status', 'published')
-      .order('saved_count', { ascending: false })
-      .order('review_count', { ascending: false });
+      .order('created_at', { ascending: true });
 
     if (mapsErr){
       console.error('맵 목록 로딩 실패:', mapsErr);
       return;
     }
 
+    // 큐레이터 표시 이름 (users.display_name) — 컬럼이 아직 없을 수도 있으니 실패해도 조용히 넘어간다
+    var curatorNameById = {};
+    var creatorIds = Array.from(new Set(maps.map(function(m){ return m.creator_id; }).filter(Boolean)));
+    if (creatorIds.length){
+      var { data: curators, error: curatorsErr } = await sb.from('users').select('id, display_name').in('id', creatorIds);
+      if (curatorsErr){
+        console.warn('큐레이터 이름 로딩 생략 (users.display_name 컬럼이 아직 없을 수 있음):', curatorsErr.message);
+      } else {
+        (curators || []).forEach(function(u){ if (u.display_name) curatorNameById[u.id] = u.display_name; });
+      }
+    }
+
     var { data: spots, error: spotsErr } = await sb
       .from('spots')
-      .select('id, map_id, name, name_ko, category, address, description, lat, lng, maps_url, opening_hours, phone, price_range, sort_order')
+      .select('id, map_id, name, name_ko, category, address, description, lat, lng, maps_url, opening_hours, phone, price_range, sort_order, image_url')
       .order('sort_order', { ascending: true });
 
     if (spotsErr){
@@ -598,7 +842,8 @@
         google_maps_link: s.maps_url || '',
         opening_hours: s.opening_hours || '',
         phone: s.phone || '',
-        price_range: s.price_range || ''
+        price_range: s.price_range || '',
+        image_url: s.image_url || ''
       });
     });
 
@@ -608,8 +853,27 @@
         map_title: m.title,
         subtitle: m.description || '',
         city: m.city || '',
+        cover_image_url: m.cover_image_url || '',
+        category: m.category || '',
+        curator_name: curatorNameById[m.creator_id] || '',
         places: spotsByMap[m.id] || []
       };
+    });
+    applyFallbackCuratorNames();
+  }
+
+  // =========================================================
+  // 실제 users.display_name이 아직 없는 맵은, 상세 화면에서 이미 쓰고 있는
+  // CREATORS / MAP_CREATOR_IDX 목업 큐레이터로 홈 카드 크레딧을 채운다.
+  // (기존에 Esop/Mira/Juno 같은 별도 이름을 새로 만들었었는데,
+  //  상세 화면 크레디트 블록과 이름이 달라 혼란스러워서 하나로 통일함)
+  // 실제 display_name 데이터가 채워지면 자동으로 그쪽이 우선 사용됨.
+  // =========================================================
+  function applyFallbackCuratorNames(){
+    MAPS_DATA.maps.forEach(function(m, i){
+      if (!m.curator_name){
+        m.curator_name = CREATORS[creatorIdxForMap(i, m.map_title)].name;
+      }
     });
   }
 
@@ -711,21 +975,46 @@
     return pal[h % pal.length];
   }
 
-  var CATEGORY_VISUAL = {
-    restaurant: { bg:'#8C5A34', icon:'<path d="M4 3v6a2 2 0 002 2h1v10M8 3v8M12 3v8M16 3c0 3-2 4-2 8v9"/>' },
-    cafe:       { bg:'#A66B3F', icon:'<path d="M5 9h11v6a4 4 0 01-4 4H9a4 4 0 01-4-4V9zM16 10h1a3 3 0 010 6h-1M7 3c0 1-1 1-1 2s1 1 1 2M11 3c0 1-1 1-1 2s1 1 1 2"/>' },
-    bar:        { bg:'#6B4223', icon:'<path d="M15 10L9 16v5h6M9 10l6 6M6 4h12l-6 8L6 4z"/>' },
-    dessert:    { bg:'#B08558', icon:'<path d="M4 12h16v6a2 2 0 01-2 2H6a2 2 0 01-2-2v-6zM4 12c0-4 3-7 8-7s8 3 8 7M9 5V3M12 5V3M15 5V3"/>' },
-    other:      { bg:'#748B5C', icon:'<path d="M12 21s-6.7-4.35-9.33-8.36C.86 9.9 1.6 6.6 4.3 5.1 6.4 3.94 9 4.5 12 7.5c3-3 5.6-3.56 7.7-2.4 2.7 1.5 3.44 4.8 1.63 7.54C18.7 16.65 12 21 12 21z"/>' }
+  // 실제 장소 사진(image_url)이 없을 때 쓰는 카테고리별 스톡사진.
+  // 같은 카테고리라도 매번 똑같은 사진이 반복되지 않도록 장소별로 여러 장 중 하나를 고정 배정한다.
+  var CATEGORY_STOCK_PHOTOS = {
+    restaurant: [
+      'https://images.unsplash.com/photo-1555126634-323283e090fa?w=400&q=60',
+      'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&q=60',
+      'https://images.unsplash.com/photo-1552566626-52f8b828add9?w=400&q=60'
+    ],
+    cafe: [
+      'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=400&q=60',
+      'https://images.unsplash.com/photo-1447933601403-0c6688de566e?w=400&q=60',
+      'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=400&q=60'
+    ],
+    bar: [
+      'https://images.unsplash.com/photo-1470337458703-46ad1756a187?w=400&q=60',
+      'https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=400&q=60',
+      'https://images.unsplash.com/photo-1543007630-9710e4a00a20?w=400&q=60'
+    ],
+    dessert: [
+      'https://images.unsplash.com/photo-1551024506-0bccd828d307?w=400&q=60',
+      'https://images.unsplash.com/photo-1488477181946-6428a0291777?w=400&q=60',
+      'https://images.unsplash.com/photo-1517427294546-5aa121f68e8a?w=400&q=60'
+    ],
+    other: [
+      'https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?w=400&q=60',
+      'https://images.unsplash.com/photo-1533777857889-4be7c70b33f7?w=400&q=60'
+    ]
   };
+  function stockPhotoForSpot(p){
+    var cat = CATEGORY_STOCK_PHOTOS[p.category] ? p.category : 'other';
+    var set = CATEGORY_STOCK_PHOTOS[cat];
+    var h = 0, str = p.name || cat;
+    for (var i=0;i<str.length;i++){ h = (h*31 + str.charCodeAt(i)) >>> 0; }
+    return set[h % set.length];
+  }
   function spotThumbHTML(p){
-    var cat = CATEGORY_VISUAL[p.category] ? p.category : null;
-    if (!cat){
-      return 'style="background:'+colorFor(p.name)+';">' + (p.name ? p.name.charAt(0).toUpperCase() : '?');
+    if (p.image_url){
+      return 'style="background-image:url(\''+p.image_url+'\');background-size:cover;background-position:center;">';
     }
-    var v = CATEGORY_VISUAL[cat];
-    return 'style="background:'+v.bg+';">' +
-      '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#F1E1CC" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+v.icon+'</svg>';
+    return 'style="background-image:url(\''+stockPhotoForSpot(p)+'\');background-size:cover;background-position:center;">';
   }
   function categoryLabel(cat){
     var labels = { restaurant:'Restaurant', cafe:'Cafe', bar:'Bar', dessert:'Dessert', other:'Other' };
@@ -750,13 +1039,18 @@
   }
 
   function renderCreatorLine(mapIdx){
-    var c = CREATORS[MAP_CREATOR_IDX[mapIdx % MAP_CREATOR_IDX.length]];
+    var m = MAPS_DATA.maps[mapIdx];
+    var c = CREATORS[creatorIdxForMap(mapIdx, m && m.map_title)];
     return c.handle + ' ' + verifiedBadgeSVG();
   }
 
   function renderCreatorBlock(mapIdx){
-    var c = CREATORS[MAP_CREATOR_IDX[mapIdx % MAP_CREATOR_IDX.length]];
-    var mapCount = MAP_CREATOR_IDX.filter(function(i){ return i === MAP_CREATOR_IDX[mapIdx % MAP_CREATOR_IDX.length]; }).length;
+    var m = MAPS_DATA.maps[mapIdx];
+    var idx = creatorIdxForMap(mapIdx, m && m.map_title);
+    var c = CREATORS[idx];
+    var mapCount = MAPS_DATA.maps.filter(function(mm, i){
+      return creatorIdxForMap(i, mm.map_title) === idx;
+    }).length;
     return '' +
       '<div class="creator-avatar">'+c.name.charAt(0)+'</div>' +
       '<div>' +
@@ -781,8 +1075,77 @@
 
   var COVER_POSITIONS = {};
 
-  function renderCoverPhoto(idx){
-    var i = idx % COVER_PHOTOS.length;
+  // 아포스트로피/특수문자 차이(', ', ´ 등) 때문에 제목이 틀어져 매칭이 깨지는 걸 방지
+  function normTitle(t){
+    return String(t || '')
+      .replace(/[\u0027\u2018\u2019\u00B4\u02BC`]/g, '') // 각종 아포스트로피 문자 제거
+      .replace(/\s+/g, ' ')
+      .trim()
+      .toLowerCase();
+  }
+
+  // 확인된 정답 조합을 제목 기준으로 영구 고정 (DB 정렬 순서와 무관하게 항상 유지됨)
+  var TITLE_PHOTO_INDEX = {};
+  [
+    ['The Softer Side of Seoul: Yeonhui', 0],
+    ['Lost in Mangwon-Dong', 1],
+    ['Inspiration seongsu', 2],
+    ['Korean BBQ - Only #1', 3],
+    ["Mimyo's Everyday Euljiro", 4],
+    ['Busan with friends', 5],
+    ['Noodle Goodness', 6],
+    ['Gwangjang Market Essentials', 7],
+    ['Yeonhui-dong', 8]
+  ].forEach(function(pair){ TITLE_PHOTO_INDEX[normTitle(pair[0])] = pair[1]; });
+
+  // 확인된 홈 화면 노출 순서도 제목 기준으로 고정 (DB 정렬이 흔들려도 이 순서 유지)
+  var TITLE_ORDER = [
+    'The Softer Side of Seoul: Yeonhui',
+    'Lost in Mangwon-Dong',
+    'Inspiration seongsu',
+    'Korean BBQ - Only #1',
+    "Mimyo's Everyday Euljiro",
+    'Busan with friends',
+    'Noodle Goodness',
+    'Gwangjang Market Essentials',
+    'Yeonhui-dong'
+  ].map(normTitle);
+  function titleOrderRank(title){
+    var i = TITLE_ORDER.indexOf(normTitle(title));
+    return i === -1 ? TITLE_ORDER.length : i; // 목록에 없는 새 지도는 맨 뒤로
+  }
+
+  // ---------- 큐레이터 배정: 제목 기준으로 고정 ----------
+  // 기존엔 MAP_CREATOR_IDX를 DB 배열 순서(mapIdx)로 바로 매핑했는데,
+  // TITLE_ORDER처럼 DB 정렬 순서가 흔들리면 "Mimyo's Everyday Euljiro"에 Haewon이 붙는 식으로
+  // 어긋날 수 있어서, 제목 기준 고정 매핑으로 바꿈. 홈 카드 크레딧 / 상세 화면 크레딧 둘 다 이걸 씀.
+  var TITLE_CURATOR_IDX = {};
+  TITLE_ORDER.forEach(function(normalizedTitle, i){
+    TITLE_CURATOR_IDX[normalizedTitle] = MAP_CREATOR_IDX[i % MAP_CREATOR_IDX.length];
+  });
+  // 궁합이 안 맞는다고 판단해 명시적으로 스왑 (2026-07-31 피드백)
+  TITLE_CURATOR_IDX[normTitle("Mimyo's Everyday Euljiro")] = 0; // Mimyo
+  TITLE_CURATOR_IDX[normTitle('Korean BBQ - Only #1')] = 2;     // Haewon
+
+  function creatorIdxForMap(mapIdx, title){
+    var key = normTitle(title);
+    if (title && Object.prototype.hasOwnProperty.call(TITLE_CURATOR_IDX, key)){
+      return TITLE_CURATOR_IDX[key];
+    }
+    return MAP_CREATOR_IDX[mapIdx % MAP_CREATOR_IDX.length]; // 목록에 없는 새 지도는 기존 방식
+  }
+
+  function renderCoverPhoto(idx, title, coverImageUrl){
+    if (coverImageUrl){
+      return '<div class="photo-cover-wrap"><img src="'+coverImageUrl+'" alt="" loading="lazy" style="object-position:center;"></div>';
+    }
+    var i;
+    var key = normTitle(title);
+    if (title && Object.prototype.hasOwnProperty.call(TITLE_PHOTO_INDEX, key)){
+      i = TITLE_PHOTO_INDEX[key] % COVER_PHOTOS.length;
+    } else {
+      i = idx % COVER_PHOTOS.length; // 목록에 없는 새 지도는 기존 방식으로 대체
+    }
     var url = COVER_PHOTOS[i];
     var pos = COVER_POSITIONS[i] || 'center';
     return '<div class="photo-cover-wrap"><img src="'+url+'" alt="" loading="lazy" style="object-position:'+pos+'"></div>';
@@ -893,11 +1256,32 @@
   var currentRole = null; // null | 'user' | 'creator' — 실제 Supabase 세션에서 파생됨
   var currentUser = null; // Supabase auth user 객체 (로그인 안 하면 null)
 
+  var STATUS_LABEL = {
+    draft: { text: 'Draft', bg: '#E3DCCF', color: 'var(--ink-soft)' },
+    pending: { text: 'Pending review', bg: '#F3E3B8', color: '#8A6A1F' },
+    published: { text: 'Published', bg: '#D9E7CE', color: '#3E6B2C' },
+    rejected: { text: 'Rejected', bg: '#F3D6D6', color: '#B23B3B' }
+  };
+  function statusBadgeHTML(status){
+    var s = STATUS_LABEL[status] || STATUS_LABEL.draft;
+    return '<span style="display:inline-block;font-size:11px;font-weight:800;background:'+s.bg+';color:'+s.color+';padding:3px 9px;border-radius:999px;">'+s.text+'</span>';
+  }
+
+  async function fetchCreatorMaps(userId){
+    var { data, error } = await sb
+      .from('maps')
+      .select('id, title, description, city, status, reject_reason, created_at, category')
+      .eq('creator_id', userId)
+      .order('created_at', { ascending: false });
+    if (error){ return []; }
+    return data || [];
+  }
+
   function renderMyContent(){
     var el = document.getElementById('myContent');
     if (!currentUser){
       el.innerHTML =
-        '<p style="font-size:12px;color:var(--ink-soft);margin:0 0 18px;line-height:1.6;">Log in to save maps, save spots, and leave reviews.</p>' +
+        '<p style="font-size:12px;color:var(--ink-soft);margin:0 0 18px;line-height:1.6;">Log in to save maps, save places, and leave reviews.</p>' +
         '<button class="btn primary" id="openLoginBtn" style="margin-bottom:10px;">Log in</button>' +
         '<button class="btn ghost" id="openSignupBtn">Sign up</button>';
       document.getElementById('openLoginBtn').addEventListener('click', function(){ openAuthModal('login'); });
@@ -912,26 +1296,854 @@
           '<div><div style="font-weight:800;font-size:14px;color:var(--ink);">' + currentUser.email + '</div><div style="font-size:12px;color:var(--ink-faint);">General member</div></div>' +
         '</div>' +
         '<button class="btn ghost" id="logoutBtn">Log out</button>';
-    } else {
+      document.getElementById('logoutBtn').addEventListener('click', doLogout);
+      return;
+    }
+
+    // ---------- ADMIN: 콘텐츠 생성 없이 운영/관리만 담당 ----------
+    if (currentRole === 'admin'){
       el.innerHTML =
         '<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">' +
           '<div class="creator-avatar" style="background:var(--accent-strong);">' + initial + '</div>' +
-          '<div><div style="font-weight:800;font-size:14px;color:var(--ink);">' + currentUser.email + '</div><div style="font-size:12px;color:var(--ink-faint);">Creator</div></div>' +
+          '<div><div style="font-weight:800;font-size:14px;color:var(--ink);">' + currentUser.email + '</div><div style="font-size:12px;color:var(--ink-faint);">Admin</div></div>' +
         '</div>' +
-        '<button class="btn primary" id="newMapBtn" style="margin-bottom:14px;position:relative;">+ New map</button>' +
-        '<div class="list-card"><div class="spot-thumb" style="background:var(--accent);">L</div><div style="flex:1;"><div class="spot-name">Lost in Mangwon-Dong</div><div class="card-meta">20 spots</div></div></div>' +
-        '<div class="list-card"><div class="spot-thumb" style="background:#B08558;">I</div><div style="flex:1;"><div class="spot-name">Inspiration seongsu</div><div class="card-meta">20 spots</div></div></div>' +
-        '<button class="btn ghost" id="logoutBtn" style="margin-top:6px;">Log out</button>';
-      document.getElementById('newMapBtn').addEventListener('click', function(){ toast('Map management coming in the next step'); });
+        '<button class="btn primary" id="adminReviewBtn" style="width:100%;margin-bottom:14px;">Admin panel</button>' +
+        '<button class="btn ghost" id="logoutBtn" style="width:100%;">Log out</button>';
+      document.getElementById('logoutBtn').addEventListener('click', doLogout);
+      document.getElementById('adminReviewBtn').addEventListener('click', openAdminScreen);
+      return;
     }
-    document.getElementById('logoutBtn').addEventListener('click', async function(){
-      await sb.auth.signOut();
-      currentUser = null; currentRole = null;
-      savedMaps = {}; savedSpots = {}; // 다른 유저의 저장 상태가 화면에 남지 않도록 초기화
-      renderMyContent();
-      renderHome(); renderSaved();
-      toast('Logged out');
+
+    // ---------- CREATOR: 맵 생성/관리 ----------
+    el.innerHTML =
+      '<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">' +
+        '<div class="creator-avatar" style="background:var(--accent-strong);">' + initial + '</div>' +
+        '<div><div style="font-weight:800;font-size:14px;color:var(--ink);">' + currentUser.email + '</div><div style="font-size:12px;color:var(--ink-faint);">Creator</div></div>' +
+      '</div>' +
+      '<button class="btn primary" id="newMapBtn" style="width:100%;margin-bottom:14px;">+ New map</button>' +
+      '<div id="myMapsList" style="font-size:12px;color:var(--ink-faint);">Loading your maps…</div>' +
+      '<button class="btn ghost" id="logoutBtn" style="width:100%;margin-top:14px;">Log out</button>';
+
+    document.getElementById('logoutBtn').addEventListener('click', doLogout);
+    document.getElementById('newMapBtn').addEventListener('click', function(){ openMapEditor(null); });
+
+    fetchCreatorMaps(currentUser.id).then(function(maps){
+      var listEl = document.getElementById('myMapsList');
+      if (!listEl) return; // 화면이 그 사이 바뀌었을 수 있음
+      if (!maps.length){
+        listEl.innerHTML = '<p style="font-size:12px;color:var(--ink-faint);">No maps yet — create your first one above.</p>';
+        return;
+      }
+      listEl.innerHTML = maps.map(function(m){
+        return '' +
+          '<div class="list-card" data-mapid="'+m.id+'" style="cursor:pointer;">' +
+            '<div class="spot-thumb" style="background:'+colorFor(m.title)+';"></div>' +
+            '<div style="flex:1;min-width:0;">' +
+              '<div class="spot-name">'+m.title+'</div>' +
+              '<div class="card-meta" style="margin-bottom:4px;">'+[m.city, m.category].filter(Boolean).join(' · ')+'</div>' +
+              statusBadgeHTML(m.status) +
+              (m.status === 'rejected' && m.reject_reason ? '<div style="font-size:11px;color:#B23B3B;margin-top:4px;">'+m.reject_reason+'</div>' : '') +
+            '</div>' +
+            '<button class="mini-icon-btn" data-delete-map="'+m.id+'" aria-label="delete map" style="flex-shrink:0;">' +
+              '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#B23B3B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0l-1 14a2 2 0 01-2 2H7a2 2 0 01-2-2L4 6"/></svg>' +
+            '</button>' +
+          '</div>';
+      }).join('');
+      listEl.querySelectorAll('[data-mapid]').forEach(function(card){
+        card.addEventListener('click', function(e){
+          if (e.target.closest('[data-delete-map]')) return;
+          openMapEditor(card.getAttribute('data-mapid'));
+        });
+      });
+      listEl.querySelectorAll('[data-delete-map]').forEach(function(btn){
+        btn.addEventListener('click', function(e){
+          e.stopPropagation();
+          deleteCreatorMap(btn.getAttribute('data-delete-map'));
+        });
+      });
     });
+  }
+
+  async function deleteCreatorMap(mapId){
+    if (!confirm('Delete this map? Its places will be deleted too.')) return;
+    var { error: spotsErr } = await sb.from('spots').delete().eq('map_id', mapId);
+    if (spotsErr){ console.error('spots delete error:', spotsErr); toast('Error: ' + spotsErr.message); return; }
+    var { error: mapErr } = await sb.from('maps').delete().eq('id', mapId);
+    if (mapErr){ console.error('map delete error:', mapErr); toast('Error: ' + mapErr.message); return; }
+    toast('Map deleted.');
+    renderMyContent();
+    loadMapsFromSupabase().then(function(){ renderHome(); });
+  }
+
+  async function doLogout(){
+    await sb.auth.signOut();
+    currentUser = null; currentRole = null;
+    savedMaps = {}; savedSpots = {}; // 다른 유저의 저장 상태가 화면에 남지 않도록 초기화
+    renderMyContent();
+    renderHome(); renderSaved();
+    toast('Logged out.');
+  }
+
+  // =========================================================
+  // ---------- MAP EDITOR (크리에이터: 맵 생성/수정 + 장소 관리) ----------
+  // =========================================================
+  var editingMapId = null; // null이면 신규 생성
+  var editingMapStatus = 'draft';
+  var editingMapSpots = [];
+  var editingSpotId = null; // 현재 스팟 에디터에서 수정 중인 장소 id (null이면 신규)
+
+  function updateMapEditorStepUI(saved){
+    var step1 = document.getElementById('mapEditorStep1Num');
+    var step2 = document.getElementById('mapEditorStep2Num');
+    var saveBtn = document.getElementById('mapEditorSaveBtn');
+    var submitBtn = document.getElementById('mapEditorSubmitBtn');
+    var addSpotBtn = document.getElementById('mapEditorAddSpotBtn');
+    if (saved){
+      step1.classList.add('done');
+      step2.classList.remove('done');
+      saveBtn.textContent = 'Save changes';
+      saveBtn.classList.remove('primary'); saveBtn.classList.add('ghost');
+      submitBtn.style.display = (editingMapStatus === 'published') ? 'none' : 'block';
+      addSpotBtn.style.display = 'inline-flex';
+    } else {
+      step1.classList.remove('done');
+      step2.classList.add('done');
+      saveBtn.textContent = 'Save map & continue';
+      saveBtn.classList.remove('ghost'); saveBtn.classList.add('primary');
+      submitBtn.style.display = 'none';
+      addSpotBtn.style.display = 'none';
+    }
+  }
+
+  function openMapEditor(mapId){
+    closeAllOverlays();
+    editingMapId = mapId;
+    document.getElementById('mapEditorTitleInput').value = '';
+    document.getElementById('mapEditorDescInput').value = '';
+    document.getElementById('mapEditorCityInput').value = '';
+    document.getElementById('mapEditorCoverInput').value = '';
+    document.getElementById('mapEditorCoverPreview').style.backgroundImage = '';
+    document.getElementById('mapEditorStatusBadge').innerHTML = '';
+    document.getElementById('mapEditorRejectNote').style.display = 'none';
+    document.getElementById('mapEditorSpotList').innerHTML = '<div class="places-empty-state">Save the map first to start adding places.</div>';
+    updateMapEditorStepUI(!!mapId);
+
+    if (!mapId){
+      document.getElementById('mapEditorTitle').textContent = 'New map';
+      editingMapStatus = 'draft';
+      editingMapSpots = [];
+    } else {
+      document.getElementById('mapEditorTitle').textContent = 'Edit map';
+      loadMapIntoEditor(mapId);
+    }
+    document.getElementById('screen-map-editor').classList.add('is-open');
+  }
+
+  function closeMapEditor(){
+    document.getElementById('screen-map-editor').classList.remove('is-open');
+    editingMapId = null;
+    renderMyContent(); // 목록에 최신 상태 반영
+  }
+  document.getElementById('mapEditorBackBtn').addEventListener('click', closeMapEditor);
+
+  async function loadMapIntoEditor(mapId){
+    var { data, error } = await sb.from('maps').select('id, title, description, city, status, reject_reason, cover_image_url, category').eq('id', mapId).single();
+    if (error || !data){ toast('Could not load this map.'); return; }
+    document.getElementById('mapEditorTitleInput').value = data.title || '';
+    document.getElementById('mapEditorDescInput').value = data.description || '';
+    document.getElementById('mapEditorCityInput').value = data.city || '';
+    document.getElementById('mapEditorCoverInput').value = data.cover_image_url || '';
+    document.getElementById('mapEditorCoverPreview').style.backgroundImage = data.cover_image_url ? 'url(\''+data.cover_image_url+'\')' : '';
+    editingMapStatus = data.status;
+    document.getElementById('mapEditorStatusBadge').innerHTML = statusBadgeHTML(data.status);
+    var rejectEl = document.getElementById('mapEditorRejectNote');
+    if (data.status === 'rejected' && data.reject_reason){
+      rejectEl.style.display = 'block';
+      rejectEl.textContent = 'Reviewer note: ' + data.reject_reason;
+    } else {
+      rejectEl.style.display = 'none';
+    }
+    document.getElementById('mapEditorSubmitBtn').style.display = (data.status === 'published') ? 'none' : 'block';
+    updateMapEditorStepUI(true);
+    await reloadEditorSpotList();
+  }
+
+  async function reloadEditorSpotList(){
+    if (!editingMapId) return;
+    var { data, error } = await sb
+      .from('spots')
+      .select('id, name, category, address, description, maps_url, image_url, sort_order, lat, lng')
+      .eq('map_id', editingMapId)
+      .order('sort_order', { ascending: true });
+    editingMapSpots = error ? [] : (data || []);
+    renderEditorSpotList();
+  }
+
+  function renderEditorSpotList(){
+    var el = document.getElementById('mapEditorSpotList');
+    if (!editingMapSpots.length){
+      el.innerHTML = '<div class="places-empty-state">No places yet — add your first one with "+ Add place".</div>';
+      return;
+    }
+    el.innerHTML = editingMapSpots.map(function(s, i){
+      return '' +
+        '<div class="list-card" data-spotid="'+s.id+'">' +
+          '<div class="spot-thumb" '+spotThumbHTML(s)+'</div>' +
+          '<div style="flex:1;min-width:0;">' +
+            '<div class="spot-name">'+s.name+'</div>' +
+            '<div class="card-meta">'+categoryLabel(s.category)+'</div>' +
+          '</div>' +
+          '<div style="display:flex;flex-direction:column;gap:4px;">' +
+            '<button class="mini-icon-btn" data-moveup="'+i+'" aria-label="move up" '+(i===0?'style="opacity:.3;"':'')+'>' +
+              '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>' +
+            '</button>' +
+            '<button class="mini-icon-btn" data-movedown="'+i+'" aria-label="move down" '+(i===editingMapSpots.length-1?'style="opacity:.3;"':'')+'>' +
+              '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12l7 7 7-7"/></svg>' +
+            '</button>' +
+          '</div>' +
+        '</div>';
+    }).join('');
+    el.querySelectorAll('[data-spotid]').forEach(function(card){
+      card.addEventListener('click', function(e){
+        if (e.target.closest('[data-moveup]') || e.target.closest('[data-movedown]')) return;
+        var spot = editingMapSpots.find(function(s){ return s.id === card.getAttribute('data-spotid'); });
+        if (spot) openSpotEditor(spot);
+      });
+    });
+    el.querySelectorAll('[data-moveup]').forEach(function(btn){
+      btn.addEventListener('click', function(e){ e.stopPropagation(); reorderEditorSpot(parseInt(btn.getAttribute('data-moveup'),10), -1); });
+    });
+    el.querySelectorAll('[data-movedown]').forEach(function(btn){
+      btn.addEventListener('click', function(e){ e.stopPropagation(); reorderEditorSpot(parseInt(btn.getAttribute('data-movedown'),10), 1); });
+    });
+  }
+
+  async function reorderEditorSpot(i, dir){
+    var j = i + dir;
+    if (j < 0 || j >= editingMapSpots.length) return;
+    var tmp = editingMapSpots[i]; editingMapSpots[i] = editingMapSpots[j]; editingMapSpots[j] = tmp;
+    renderEditorSpotList();
+    // sort_order를 배열 인덱스 기준으로 일괄 갱신
+    await Promise.all(editingMapSpots.map(function(s, idx){
+      return sb.from('spots').update({ sort_order: idx }).eq('id', s.id);
+    }));
+  }
+
+  async function saveMapEditor(){
+    closeTopModal();
+    var title = document.getElementById('mapEditorTitleInput').value.trim();
+    var description = document.getElementById('mapEditorDescInput').value.trim();
+    var city = document.getElementById('mapEditorCityInput').value.trim();
+    var coverUrl = document.getElementById('mapEditorCoverInput').value.trim();
+    if (!title){ toast('Please enter a title.'); return; }
+
+    if (!editingMapId){
+      var { data, error } = await sb.from('maps').insert({
+        creator_id: currentUser.id, title: title, description: description, city: city,
+        cover_image_url: coverUrl || null, status: 'draft'
+      }).select('id').single();
+      if (error || !data){ console.error('maps insert error:', error); toast('Error: ' + (error ? error.message : 'unknown')); return; }
+      editingMapId = data.id;
+      editingMapStatus = 'draft';
+      document.getElementById('mapEditorTitle').textContent = 'Edit map';
+      document.getElementById('mapEditorStatusBadge').innerHTML = statusBadgeHTML('draft');
+      updateMapEditorStepUI(true);
+      editingMapSpots = [];
+      renderEditorSpotList();
+      toast('Map created — now add some places.');
+      var step2El = document.getElementById('mapEditorStep2');
+      if (step2El) step2El.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else {
+      var { error } = await sb.from('maps').update({
+        title: title, description: description, city: city, cover_image_url: coverUrl || null
+      }).eq('id', editingMapId);
+      if (error){ console.error('maps update error:', error); toast('Error: ' + error.message); return; }
+      toast('Saved.');
+    }
+  }
+  document.getElementById('mapEditorSaveBtn').addEventListener('click', saveMapEditor);
+
+  // ---------- 맵 커버 이미지 업로드 (Supabase Storage) ----------
+  document.getElementById('mapEditorUploadBtn').addEventListener('click', function(){
+    document.getElementById('mapEditorCoverFile').click();
+  });
+  document.getElementById('mapEditorCoverFile').addEventListener('change', async function(e){
+    var file = e.target.files[0];
+    if (!file) return;
+    var previewEl = document.getElementById('mapEditorCoverPreview');
+    var btn = document.getElementById('mapEditorUploadBtn');
+
+    // 즉시 로컬 미리보기
+    var localUrl = URL.createObjectURL(file);
+    previewEl.style.backgroundImage = 'url(\''+localUrl+'\')';
+
+    var originalText = btn.textContent;
+    btn.textContent = 'Uploading…'; btn.disabled = true;
+    try {
+      var ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+      var path = (currentUser ? currentUser.id : 'anon') + '/' + Date.now() + '.' + ext;
+      var { error: uploadErr } = await sb.storage.from('map-covers').upload(path, file, { upsert: true });
+      if (uploadErr){ console.error('upload error:', uploadErr); toast('Error: ' + uploadErr.message); return; }
+      var { data: pub } = sb.storage.from('map-covers').getPublicUrl(path);
+      document.getElementById('mapEditorCoverInput').value = pub.publicUrl;
+      toast('Image uploaded.');
+    } catch (err){
+      console.error('upload exception:', err);
+      toast('Upload failed. Please try again.');
+    } finally {
+      btn.textContent = originalText; btn.disabled = false;
+    }
+  });
+
+  async function submitMapForReview(){
+    closeTopModal();
+    if (!editingMapId){ toast('Save the map first.'); return; }
+    if (!editingMapSpots.length){ toast('Add at least one place before submitting.'); return; }
+    var { error } = await sb.from('maps').update({
+      status: 'pending', submitted_at: new Date().toISOString()
+    }).eq('id', editingMapId);
+    if (error){ console.error('submit error:', error); toast('Error: ' + error.message); return; }
+    editingMapStatus = 'pending';
+    document.getElementById('mapEditorStatusBadge').innerHTML = statusBadgeHTML('pending');
+    toast('Submitted for review!');
+  }
+  document.getElementById('mapEditorSubmitBtn').addEventListener('click', submitMapForReview);
+  document.getElementById('mapEditorAddSpotBtn').addEventListener('click', function(){ openSpotEditor(null); });
+
+  // ---------- SPOT EDITOR (바텀시트) ----------
+  function openSpotEditor(spot){
+    if (document.getElementById('screen-spot-detail').classList.contains('is-open')) closeSpotDetail();
+    editingSpotId = spot ? spot.id : null;
+    document.getElementById('spotEditorTitle').textContent = spot ? 'Edit place' : 'Add place';
+    document.getElementById('spotEditorName').value = spot ? spot.name : '';
+    document.getElementById('spotEditorCategory').value = spot ? (spot.category || 'other') : 'other';
+    document.getElementById('spotEditorDesc').value = spot ? (spot.description || '') : '';
+    document.getElementById('spotEditorAddress').value = spot ? (spot.address || '') : '';
+    document.getElementById('spotEditorLat').value = spot && spot.lat != null ? spot.lat : '';
+    document.getElementById('spotEditorLng').value = spot && spot.lng != null ? spot.lng : '';
+    document.getElementById('spotEditorMapsUrl').value = spot ? (spot.maps_url || '') : '';
+    document.getElementById('spotEditorImageUrl').value = spot ? (spot.image_url || '') : '';
+    document.getElementById('spotEditorCoverPreview').style.backgroundImage = (spot && spot.image_url) ? 'url(\''+spot.image_url+'\')' : '';
+    document.getElementById('spotEditorDeleteBtn').style.display = spot ? 'block' : 'none';
+
+    var hasLoc = !!(spot && spot.lat != null && spot.lng != null);
+    document.getElementById('spotEditorLocConfirm').style.display = hasLoc ? 'block' : 'none';
+    document.getElementById('spotEditorLatLngWrap').style.display = hasLoc ? 'block' : 'none';
+
+    var screenEl = document.getElementById('screen-spot-editor');
+    screenEl.classList.add('is-open');
+    var inner = screenEl.querySelector('.sheet-inner');
+    if (inner) inner.scrollTop = 0;
+    updateBackdrop();
+  }
+  function closeSpotEditor(){
+    document.getElementById('screen-spot-editor').classList.remove('is-open');
+    updateBackdrop();
+  }
+  document.getElementById('spotEditorManualLatLngBtn').addEventListener('click', function(){
+    document.getElementById('spotEditorLatLngWrap').style.display = 'block';
+  });
+
+  // ---------- Google Maps 링크에서 좌표 자동 추출 (API 호출 없음, 결제 문제와 무관) ----------
+  function extractLatLngFromMapsUrl(url){
+    if (!url) return null;
+    // 1) 장소 상세 URL에 박힌 정확한 핀 좌표: ...!3d37.5511!4d126.9882...
+    var m = url.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/);
+    if (m) return { lat: parseFloat(m[1]), lng: parseFloat(m[2]) };
+    // 2) 지도 중심 좌표: .../@37.5511,126.9882,17z...
+    m = url.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+    if (m) return { lat: parseFloat(m[1]), lng: parseFloat(m[2]) };
+    // 3) 검색 쿼리 좌표: ?q=37.5511,126.9882
+    m = url.match(/[?&]q=(-?\d+\.\d+),(-?\d+\.\d+)/);
+    if (m) return { lat: parseFloat(m[1]), lng: parseFloat(m[2]) };
+    return null;
+  }
+  document.getElementById('spotEditorMapsUrl').addEventListener('input', function(){
+    var loc = extractLatLngFromMapsUrl(this.value.trim());
+    if (loc){
+      document.getElementById('spotEditorLat').value = loc.lat;
+      document.getElementById('spotEditorLng').value = loc.lng;
+      document.getElementById('spotEditorLocConfirm').style.display = 'block';
+      document.getElementById('spotEditorLocConfirm').textContent = '✓ Found location from map link';
+    }
+  });
+
+  // ---------- 무료 주소 검색으로 좌표 찾기 (OpenStreetMap Nominatim, 키/결제 불필요) ----------
+  async function findLocationForSpot(){
+    var query = document.getElementById('spotEditorAddress').value.trim();
+    if (!query){ toast('Please enter a place name or address first.'); return; }
+    var btn = document.getElementById('spotEditorFindLocBtn');
+    var originalText = btn.textContent;
+    btn.textContent = 'Searching…'; btn.disabled = true;
+    try {
+      var url = 'https://nominatim.openstreetmap.org/search?format=json&limit=1&accept-language=ko&q=' + encodeURIComponent(query);
+      var res = await fetch(url);
+      var results = await res.json();
+      if (!results || !results.length){
+        toast('Could not find that location. Try a different search or enter it manually.');
+        return;
+      }
+      var r = results[0];
+      document.getElementById('spotEditorLat').value = parseFloat(r.lat);
+      document.getElementById('spotEditorLng').value = parseFloat(r.lon);
+      document.getElementById('spotEditorLocConfirm').style.display = 'block';
+      document.getElementById('spotEditorLocConfirm').textContent = '✓ Location found';
+      if (r.display_name) document.getElementById('spotEditorAddress').value = r.display_name;
+    } catch (e){
+      console.error('geocode error:', e);
+      toast('Something went wrong searching for that location. Please try again.');
+    } finally {
+      btn.textContent = originalText; btn.disabled = false;
+    }
+  }
+  document.getElementById('spotEditorFindLocBtn').addEventListener('click', findLocationForSpot);
+
+  document.getElementById('spotEditorCloseBtn').addEventListener('click', closeTopModal);
+
+  async function saveSpotEditor(){
+    if (!editingMapId){ toast('Save the map first.'); return; }
+    var name = document.getElementById('spotEditorName').value.trim();
+    if (!name){ toast('Please enter a place name.'); return; }
+    var latVal = document.getElementById('spotEditorLat').value.trim();
+    var lngVal = document.getElementById('spotEditorLng').value.trim();
+    if (!latVal || !lngVal){ toast('Please enter latitude and longitude.'); return; }
+    var payload = {
+      map_id: editingMapId,
+      name: name,
+      category: document.getElementById('spotEditorCategory').value,
+      description: document.getElementById('spotEditorDesc').value.trim(),
+      address: document.getElementById('spotEditorAddress').value.trim(),
+      lat: parseFloat(latVal),
+      lng: parseFloat(lngVal),
+      maps_url: document.getElementById('spotEditorMapsUrl').value.trim(),
+      image_url: document.getElementById('spotEditorImageUrl').value.trim() || null
+    };
+    if (editingSpotId){
+      var { error } = await sb.from('spots').update(payload).eq('id', editingSpotId);
+      if (error){ console.error('spots update error:', error); toast('Error: ' + error.message); return; }
+    } else {
+      payload.sort_order = editingMapSpots.length;
+      var { error } = await sb.from('spots').insert(payload);
+      if (error){ console.error('spots insert error:', error); toast('Error: ' + error.message); return; }
+    }
+    closeSpotEditor();
+    await reloadEditorSpotList();
+    toast('Place saved.');
+  }
+  document.getElementById('spotEditorSaveBtn').addEventListener('click', saveSpotEditor);
+
+  // ---------- 장소 커버 이미지 업로드 (Supabase Storage, 맵 커버와 같은 버킷 재사용) ----------
+  document.getElementById('spotEditorUploadBtn').addEventListener('click', function(){
+    document.getElementById('spotEditorCoverFile').click();
+  });
+  document.getElementById('spotEditorCoverFile').addEventListener('change', async function(e){
+    var file = e.target.files[0];
+    if (!file) return;
+    var previewEl = document.getElementById('spotEditorCoverPreview');
+    var btn = document.getElementById('spotEditorUploadBtn');
+
+    var localUrl = URL.createObjectURL(file);
+    previewEl.style.backgroundImage = 'url(\''+localUrl+'\')';
+
+    var originalText = btn.textContent;
+    btn.textContent = 'Uploading…'; btn.disabled = true;
+    try {
+      var ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+      var path = (currentUser ? currentUser.id : 'anon') + '/spots/' + Date.now() + '.' + ext;
+      var { error: uploadErr } = await sb.storage.from('map-covers').upload(path, file, { upsert: true });
+      if (uploadErr){ console.error('upload error:', uploadErr); toast('Error: ' + uploadErr.message); return; }
+      var { data: pub } = sb.storage.from('map-covers').getPublicUrl(path);
+      document.getElementById('spotEditorImageUrl').value = pub.publicUrl;
+      toast('Image uploaded.');
+    } catch (err){
+      console.error('upload exception:', err);
+      toast('Upload failed. Please try again.');
+    } finally {
+      btn.textContent = originalText; btn.disabled = false;
+    }
+  });
+
+  async function deleteSpotEditor(){
+    if (!editingSpotId) return;
+    if (!confirm('Delete this place?')) return;
+    var { error } = await sb.from('spots').delete().eq('id', editingSpotId);
+    if (error){ console.error('spots delete error:', error); toast('Error: ' + error.message); return; }
+    closeSpotEditor();
+    await reloadEditorSpotList();
+    toast('Place deleted.');
+  }
+  document.getElementById('spotEditorDeleteBtn').addEventListener('click', deleteSpotEditor);
+
+  // =========================================================
+  // ---------- ADMIN REVIEW QUEUE ----------
+  // =========================================================
+  function openAdminScreen(){
+    document.querySelectorAll('.app-screen.root').forEach(function(s){ s.classList.remove('is-active'); });
+    document.getElementById('screen-admin').classList.add('is-active');
+    // 항상 To review 탭으로 진입
+    document.querySelectorAll('.admin-seg button').forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-adminseg')==='review'); });
+    document.querySelectorAll('.admin-panel').forEach(function(p){ p.classList.remove('active'); });
+    document.getElementById('adminReviewPanel').classList.add('active');
+    reloadAdminReviewList();
+  }
+  function closeAdminScreen(){
+    document.getElementById('screen-admin').classList.remove('is-active');
+    switchTab('my');
+  }
+  document.getElementById('adminBackBtn').addEventListener('click', closeAdminScreen);
+
+  // 어드민 화면 내부 탭 전환 (To review / All maps / Creators)
+  document.querySelectorAll('.admin-seg button').forEach(function(b){
+    b.addEventListener('click', function(){
+      document.querySelectorAll('.admin-seg button').forEach(function(x){ x.classList.remove('active'); });
+      b.classList.add('active');
+      var seg = b.getAttribute('data-adminseg');
+      document.getElementById('adminReviewPanel').classList.toggle('active', seg==='review');
+      document.getElementById('adminAllMapsPanel').classList.toggle('active', seg==='maps');
+      document.getElementById('adminCreatorsPanel').classList.toggle('active', seg==='creators');
+      if (seg === 'review') reloadAdminReviewList();
+      if (seg === 'maps') reloadAdminAllMaps();
+      if (seg === 'creators') reloadAdminCreators();
+    });
+  });
+
+  var REGION_OPTIONS = ['Seongsu', 'Yeonhui', 'Mangwon-dong', 'Euljiro', 'Gwangjang Market', 'Busan', 'Other'];
+  var adminSelectedRegion = {}; // mapId -> region
+
+  async function reloadAdminReviewList(){
+    var el = document.getElementById('adminReviewList');
+    el.innerHTML = '<p style="font-size:12px;color:var(--ink-faint);">Loading…</p>';
+    var { data, error } = await sb
+      .from('maps')
+      .select('id, title, description, city, submitted_at, creator_id, category')
+      .eq('status', 'pending')
+      .order('submitted_at', { ascending: true });
+    if (error){ el.innerHTML = '<p style="font-size:12px;color:var(--ink-faint);">Could not load review queue.</p>'; return; }
+    if (!data || !data.length){
+      el.innerHTML = '<p style="font-size:12px;color:var(--ink-faint);">Nothing pending review right now.</p>';
+      return;
+    }
+    data.forEach(function(m){ adminSelectedRegion[m.id] = m.category || ''; });
+    el.innerHTML = data.map(function(m){
+      return '' +
+        '<div class="list-card" style="align-items:flex-start;">' +
+          '<div class="spot-thumb" style="background:'+colorFor(m.title)+';"></div>' +
+          '<div style="flex:1;min-width:0;">' +
+            '<div class="spot-name">'+m.title+'</div>' +
+            '<div class="card-meta" style="margin-bottom:8px;">'+(m.city || '')+' · '+(m.description || '')+'</div>' +
+            '<div style="font-size:11px;font-weight:800;color:var(--ink-soft);margin-bottom:6px;">Region</div>' +
+            '<div class="admin-region-chips" data-mapid="'+m.id+'" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;">' +
+              REGION_OPTIONS.map(function(r){
+                return '<button type="button" class="map-cat-chip'+(adminSelectedRegion[m.id]===r?' active':'')+'" data-region="'+r+'" style="padding:5px 12px;font-size:11px;">'+r+'</button>';
+              }).join('') +
+            '</div>' +
+            '<div style="display:flex;gap:8px;">' +
+              '<button class="btn primary" data-approve="'+m.id+'" style="width:auto;flex:1;padding:8px 14px;font-size:12px;">Approve</button>' +
+              '<button class="btn ghost" data-reject="'+m.id+'" style="width:auto;flex:1;padding:8px 14px;font-size:12px;">Reject</button>' +
+            '</div>' +
+          '</div>' +
+        '</div>';
+    }).join('');
+    el.querySelectorAll('.admin-region-chips').forEach(function(wrap){
+      var mapId = wrap.getAttribute('data-mapid');
+      wrap.querySelectorAll('[data-region]').forEach(function(chip){
+        chip.addEventListener('click', function(){
+          adminSelectedRegion[mapId] = chip.getAttribute('data-region');
+          wrap.querySelectorAll('[data-region]').forEach(function(c){
+            c.classList.toggle('active', c.getAttribute('data-region') === adminSelectedRegion[mapId]);
+          });
+        });
+      });
+    });
+    el.querySelectorAll('[data-approve]').forEach(function(btn){
+      btn.addEventListener('click', function(){ approveMap(btn.getAttribute('data-approve')); });
+    });
+    el.querySelectorAll('[data-reject]').forEach(function(btn){
+      btn.addEventListener('click', function(){ rejectMap(btn.getAttribute('data-reject')); });
+    });
+  }
+
+  async function approveMap(mapId){
+    var { error } = await sb.from('maps').update({
+      status: 'published', reviewed_by: currentUser.id, category: adminSelectedRegion[mapId] || null
+    }).eq('id', mapId);
+    if (error){ console.error('approve error:', error); toast('Error: ' + error.message); return; }
+    toast('Approved and published.');
+    reloadAdminReviewList();
+    loadMapsFromSupabase().then(function(){ renderHome(); });
+  }
+
+  async function rejectMap(mapId){
+    var reason = prompt('Reason for rejecting this map:');
+    if (reason === null) return; // 취소
+    var { error } = await sb.from('maps').update({
+      status: 'rejected', reviewed_by: currentUser.id, reject_reason: reason || 'No reason given'
+    }).eq('id', mapId);
+    if (error){ console.error('reject error:', error); toast('Error: ' + error.message); return; }
+    toast('Rejected.');
+    reloadAdminReviewList();
+  }
+
+  // =========================================================
+  // ---------- ADMIN: 전체 맵 목록 관리 (All maps) ----------
+  // =========================================================
+  var ALL_STATUS_OPTIONS = ['all', 'draft', 'pending', 'published', 'rejected'];
+  var ALL_STATUS_LABEL = { all: 'All', draft: 'Draft', pending: 'Pending', published: 'Published', rejected: 'Rejected' };
+  var adminMapStatusFilter = 'all';
+  var adminMapSearchTerm = '';
+
+  function renderAdminMapStatusChips(){
+    var wrap = document.getElementById('adminMapStatusChips');
+    wrap.innerHTML = ALL_STATUS_OPTIONS.map(function(s){
+      return '<button type="button" class="admin-filter-chip'+(adminMapStatusFilter===s?' active':'')+'" data-mapstatus="'+s+'">'+ALL_STATUS_LABEL[s]+'</button>';
+    }).join('');
+    wrap.querySelectorAll('[data-mapstatus]').forEach(function(chip){
+      chip.addEventListener('click', function(){
+        adminMapStatusFilter = chip.getAttribute('data-mapstatus');
+        reloadAdminAllMaps();
+      });
+    });
+  }
+
+  var adminMapSearchWired = false;
+  function wireAdminMapSearch(){
+    if (adminMapSearchWired) return;
+    adminMapSearchWired = true;
+    var input = document.getElementById('adminMapSearchInput');
+    var t = null;
+    input.addEventListener('input', function(){
+      clearTimeout(t);
+      var v = input.value;
+      t = setTimeout(function(){ adminMapSearchTerm = v.trim(); reloadAdminAllMaps(); }, 250);
+    });
+  }
+
+  async function reloadAdminAllMaps(){
+    renderAdminMapStatusChips();
+    wireAdminMapSearch();
+    var el = document.getElementById('adminAllMapsList');
+    el.innerHTML = '<p style="font-size:12px;color:var(--ink-faint);">Loading…</p>';
+
+    var query = sb.from('maps')
+      .select('id, title, description, city, status, creator_id, created_at, category, reject_reason')
+      .order('created_at', { ascending: false });
+    if (adminMapStatusFilter !== 'all') query = query.eq('status', adminMapStatusFilter);
+    if (adminMapSearchTerm) query = query.ilike('title', '%'+adminMapSearchTerm+'%');
+
+    var { data, error } = await query;
+    if (error){ el.innerHTML = '<p style="font-size:12px;color:var(--ink-faint);">Could not load maps.</p>'; return; }
+    if (!data || !data.length){
+      el.innerHTML = '<p style="font-size:12px;color:var(--ink-faint);">No maps match this filter.</p>';
+      return;
+    }
+
+    // 크리에이터 이메일 매핑 (users 테이블에 email 컬럼이 있다는 전제)
+    var creatorIds = Array.from(new Set(data.map(function(m){ return m.creator_id; }).filter(Boolean)));
+    var emailById = {};
+    if (creatorIds.length){
+      var { data: users } = await sb.from('users').select('id, email').in('id', creatorIds);
+      (users || []).forEach(function(u){ emailById[u.id] = u.email; });
+    }
+
+    el.innerHTML = data.map(function(m){
+      var creatorLabel = emailById[m.creator_id] || (m.creator_id ? m.creator_id.slice(0, 8) + '…' : 'Unknown');
+      return '' +
+        '<div class="list-card" style="align-items:flex-start;">' +
+          '<div class="spot-thumb" style="background:'+colorFor(m.title)+';"></div>' +
+          '<div style="flex:1;min-width:0;">' +
+            '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px;">' +
+              '<div class="spot-name">'+m.title+'</div>' + statusBadgeHTML(m.status) +
+            '</div>' +
+            '<div class="card-meta" style="margin-bottom:6px;">'+(m.city || '')+' · by '+creatorLabel+'</div>' +
+            (m.status === 'rejected' && m.reject_reason ? '<div style="font-size:11px;color:var(--danger);margin-bottom:8px;">Reason: '+m.reject_reason+'</div>' : '') +
+            '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">' +
+              '<select class="admin-status-select" data-statusselect="'+m.id+'">' +
+                ['draft','pending','published','rejected'].map(function(s){
+                  return '<option value="'+s+'"'+(m.status===s?' selected':'')+'>'+ALL_STATUS_LABEL[s]+'</option>';
+                }).join('') +
+              '</select>' +
+              '<button class="btn ghost" data-admindeletemap="'+m.id+'" style="width:auto;padding:6px 12px;font-size:12px;color:var(--danger);">Delete</button>' +
+            '</div>' +
+          '</div>' +
+        '</div>';
+    }).join('');
+
+    el.querySelectorAll('[data-statusselect]').forEach(function(sel){
+      sel.addEventListener('change', function(){
+        adminSetMapStatus(sel.getAttribute('data-statusselect'), sel.value);
+      });
+    });
+    el.querySelectorAll('[data-admindeletemap]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        adminDeleteMap(btn.getAttribute('data-admindeletemap'));
+      });
+    });
+  }
+
+  async function adminSetMapStatus(mapId, newStatus){
+    var { error } = await sb.from('maps').update({
+      status: newStatus, reviewed_by: currentUser.id
+    }).eq('id', mapId);
+    if (error){ console.error('status update error:', error); toast('Error: ' + error.message); reloadAdminAllMaps(); return; }
+    toast('Status updated to ' + ALL_STATUS_LABEL[newStatus] + '.');
+    reloadAdminAllMaps();
+    loadMapsFromSupabase().then(function(){ renderHome(); });
+  }
+
+  async function adminDeleteMap(mapId){
+    if (!confirm('이 맵을 완전히 삭제할까요? 소속 장소도 함께 삭제됩니다.')) return;
+    var { error: spotsErr } = await sb.from('spots').delete().eq('map_id', mapId);
+    if (spotsErr){ console.error('spots delete error:', spotsErr); toast('Error: ' + spotsErr.message); return; }
+    var { error: mapErr } = await sb.from('maps').delete().eq('id', mapId);
+    if (mapErr){ console.error('map delete error:', mapErr); toast('Error: ' + mapErr.message); return; }
+    toast('Map deleted.');
+    reloadAdminAllMaps();
+    loadMapsFromSupabase().then(function(){ renderHome(); });
+  }
+
+  // =========================================================
+  // ---------- ADMIN: 크리에이터 계정 관리 (Creators) ----------
+  // =========================================================
+  var ROLE_OPTIONS = ['all', 'general', 'creator', 'admin'];
+  var ROLE_LABEL = { all: 'All', general: 'General', creator: 'Creator', admin: 'Admin' };
+  var ROLE_BADGE = {
+    general: { bg: '#E3DCCF', color: 'var(--ink-soft)' },
+    creator: { bg: '#F3E3B8', color: '#8A6A1F' },
+    admin: { bg: '#E4CBA8', color: 'var(--accent-strong)' }
+  };
+  function roleBadgeHTML(role){
+    var b = ROLE_BADGE[role] || ROLE_BADGE.general;
+    return '<span style="display:inline-block;font-size:11px;font-weight:800;background:'+b.bg+';color:'+b.color+';padding:3px 9px;border-radius:999px;">'+(ROLE_LABEL[role] || role)+'</span>';
+  }
+  var adminRoleFilter = 'all';
+  var adminUserSearchTerm = '';
+
+  function renderAdminUserRoleChips(){
+    var wrap = document.getElementById('adminUserRoleChips');
+    wrap.innerHTML = ROLE_OPTIONS.map(function(r){
+      return '<button type="button" class="admin-filter-chip'+(adminRoleFilter===r?' active':'')+'" data-rolefilter="'+r+'">'+ROLE_LABEL[r]+'</button>';
+    }).join('');
+    wrap.querySelectorAll('[data-rolefilter]').forEach(function(chip){
+      chip.addEventListener('click', function(){
+        adminRoleFilter = chip.getAttribute('data-rolefilter');
+        reloadAdminCreators();
+      });
+    });
+  }
+
+  var adminUserSearchWired = false;
+  function wireAdminUserSearch(){
+    if (adminUserSearchWired) return;
+    adminUserSearchWired = true;
+    var input = document.getElementById('adminUserSearchInput');
+    var t = null;
+    input.addEventListener('input', function(){
+      clearTimeout(t);
+      var v = input.value;
+      t = setTimeout(function(){ adminUserSearchTerm = v.trim(); reloadAdminCreators(); }, 250);
+    });
+  }
+
+  var adminDisplayNameColumnMissing = false;
+
+  function buildAdminUsersQuery(withDisplayName){
+    var cols = withDisplayName ? 'id, email, role, created_at, display_name' : 'id, email, role, created_at';
+    var q = sb.from('users').select(cols).order('created_at', { ascending: false });
+    if (adminRoleFilter !== 'all') q = q.eq('role', adminRoleFilter);
+    if (adminUserSearchTerm) q = q.ilike('email', '%'+adminUserSearchTerm+'%');
+    return q;
+  }
+
+  async function reloadAdminCreators(){
+    renderAdminUserRoleChips();
+    wireAdminUserSearch();
+    var el = document.getElementById('adminCreatorsList');
+    el.innerHTML = '<p style="font-size:12px;color:var(--ink-faint);">Loading…</p>';
+
+    var { data: users, error } = await buildAdminUsersQuery(true);
+    if (error){
+      // display_name 컬럼이 아직 없을 수 있으니 그 컬럼 없이 한 번 더 시도
+      var retry = await buildAdminUsersQuery(false);
+      if (retry.error){
+        el.innerHTML = '<p style="font-size:12px;color:var(--ink-faint);">Could not load accounts. (users 테이블에 email 컬럼과 admin 조회 권한 RLS 정책이 필요합니다.)</p>';
+        return;
+      }
+      users = retry.data;
+      adminDisplayNameColumnMissing = true;
+    } else {
+      adminDisplayNameColumnMissing = false;
+    }
+    if (!users || !users.length){
+      el.innerHTML = '<p style="font-size:12px;color:var(--ink-faint);">No accounts match this filter.</p>';
+      return;
+    }
+
+    // 계정별 맵 개수 (전체 맵의 creator_id를 세어서 매칭)
+    var { data: allMaps } = await sb.from('maps').select('creator_id');
+    var mapCountById = {};
+    (allMaps || []).forEach(function(m){
+      if (!m.creator_id) return;
+      mapCountById[m.creator_id] = (mapCountById[m.creator_id] || 0) + 1;
+    });
+
+    el.innerHTML = (adminDisplayNameColumnMissing ?
+      '<p style="font-size:11px;color:var(--danger);margin:0 0 10px;">users 테이블에 display_name 컬럼이 없어서 큐레이터 이름을 저장할 수 없어요. Supabase에서 컬럼을 추가해 주세요.</p>' : ''
+    ) + users.map(function(u){
+      var initial = u.email ? u.email[0].toUpperCase() : '?';
+      var mapCount = mapCountById[u.id] || 0;
+      var isSelf = currentUser && u.id === currentUser.id;
+      return '' +
+        '<div class="list-card" style="align-items:flex-start;">' +
+          '<div class="creator-avatar" style="background:var(--accent);width:36px;height:36px;font-size:13px;flex-shrink:0;">'+initial+'</div>' +
+          '<div style="flex:1;min-width:0;">' +
+            '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px;">' +
+              '<div class="spot-name" style="word-break:break-all;">'+u.email+'</div>' + roleBadgeHTML(u.role) +
+            '</div>' +
+            '<div class="card-meta" style="margin-bottom:8px;">'+mapCount+' map'+(mapCount===1?'':'s')+(isSelf ? ' · (나)' : '')+'</div>' +
+            '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">' +
+              '<select class="admin-role-select" data-roleselect="'+u.id+'"'+(isSelf ? ' disabled title="본인 계정의 역할은 여기서 변경할 수 없습니다"' : '')+'>' +
+                ['general','creator','admin'].map(function(r){
+                  return '<option value="'+r+'"'+(u.role===r?' selected':'')+'>'+ROLE_LABEL[r]+'</option>';
+                }).join('') +
+              '</select>' +
+              '<input type="text" class="admin-status-select" data-displaynameinput="'+u.id+'" placeholder="Curator name (e.g. Esop)" value="'+(u.display_name || '')+'" style="flex:1;min-width:120px;"'+(adminDisplayNameColumnMissing ? ' disabled' : '')+'>' +
+            '</div>' +
+          '</div>' +
+        '</div>';
+    }).join('');
+
+    el.querySelectorAll('[data-roleselect]').forEach(function(sel){
+      sel.addEventListener('change', function(){
+        var userId = sel.getAttribute('data-roleselect');
+        var newRole = sel.value;
+        if (!confirm('이 계정의 역할을 "'+ROLE_LABEL[newRole]+'"(으)로 변경할까요?')){
+          reloadAdminCreators();
+          return;
+        }
+        updateUserRole(userId, newRole);
+      });
+    });
+    el.querySelectorAll('[data-displaynameinput]').forEach(function(input){
+      var save = function(){
+        var userId = input.getAttribute('data-displaynameinput');
+        updateUserDisplayName(userId, input.value.trim());
+      };
+      input.addEventListener('blur', save);
+      input.addEventListener('keydown', function(e){ if (e.key === 'Enter'){ input.blur(); } });
+    });
+  }
+
+  async function updateUserDisplayName(userId, displayName){
+    var { error } = await sb.from('users').update({ display_name: displayName || null }).eq('id', userId);
+    if (error){ console.error('display_name update error:', error); toast('Error: ' + error.message); return; }
+    toast('Curator name saved.');
+  }
+
+  async function updateUserRole(userId, newRole){
+    var { error } = await sb.from('users').update({ role: newRole }).eq('id', userId);
+    if (error){ console.error('role update error:', error); toast('Error: ' + error.message); reloadAdminCreators(); return; }
+    toast('Role updated to ' + ROLE_LABEL[newRole] + '.');
+    reloadAdminCreators();
   }
 
   // ---------- 인증 모달 ----------
@@ -954,7 +2166,7 @@
     document.getElementById('tabSignup').classList.toggle('active', !isLogin);
     document.getElementById('authTitle').textContent = isLogin ? 'Log in to REAL LOCAL' : 'Create your account';
     document.getElementById('authSub').textContent = isLogin
-      ? 'Save maps, save spots, and leave reviews.'
+      ? 'Save maps, save places, and leave reviews.'
       : 'Only your email and password are needed.';
     document.getElementById('authSubmit').textContent = isLogin ? 'Log in' : 'Sign up';
   }
@@ -965,7 +2177,9 @@
     return data.role;
   }
   function mapDbRoleToUiRole(dbRole){
-    return dbRole === 'general' ? 'user' : 'creator'; // admin 화면은 아직 없어 creator 취급
+    if (dbRole === 'admin') return 'admin';
+    if (dbRole === 'general') return 'user';
+    return 'creator';
   }
 
   async function handleAuthSubmit(){
@@ -1102,27 +2316,69 @@
     document.getElementById('headerSignupLink').addEventListener('click', function(){ openAuthModal('signup'); });
   }
 
+  var homeRegionFilter = 'all';
+
+  function renderHomeRegionChips(){
+    var wrap = document.getElementById('homeRegionChips');
+    // 실제로 발행된 맵에 존재하는 지역만 칩으로 노출 (빈 필터 방지)
+    var present = Array.from(new Set(MAPS_DATA.maps.map(function(m){ return m.category; }).filter(Boolean)));
+    if (!present.length){ wrap.innerHTML = ''; return; }
+    var chips = ['all'].concat(present);
+    wrap.innerHTML = chips.map(function(r){
+      var label = r === 'all' ? 'All' : r;
+      return '<button type="button" class="filter-chip'+(homeRegionFilter===r?' active':'')+'" data-region="'+r+'">'+label+'</button>';
+    }).join('');
+    wrap.querySelectorAll('[data-region]').forEach(function(chip){
+      chip.addEventListener('click', function(){
+        homeRegionFilter = chip.getAttribute('data-region');
+        renderHome();
+      });
+    });
+  }
+
   function renderHome(){
     renderHeaderAuthLinks();
+    renderHomeRegionChips();
     var el = document.getElementById('homeList');
-    el.innerHTML = MAPS_DATA.maps.map(function(m, idx){
+    var ordered = MAPS_DATA.maps.map(function(m, idx){ return { m: m, idx: idx }; });
+    if (homeRegionFilter !== 'all'){
+      ordered = ordered.filter(function(entry){ return entry.m.category === homeRegionFilter; });
+    }
+    ordered.sort(function(a, b){
+      return titleOrderRank(a.m.map_title) - titleOrderRank(b.m.map_title);
+    });
+
+    if (!ordered.length){
+      el.innerHTML = '<p style="font-size:12px;color:var(--ink-faint);padding:20px 4px;text-align:center;">No maps in this area yet — try another region.</p>';
+      return;
+    }
+
+    el.innerHTML = ordered.map(function(entry){
+      var m = entry.m, idx = entry.idx;
       var city = m.city || locationFor(m.places);
       var saved = !!savedMaps[idx];
       return '' +
         '<div class="map-card" data-idx="'+idx+'">' +
           '<div class="cover">' +
-            renderCoverPhoto(idx) +
+            renderCoverPhoto(idx, m.map_title, m.cover_image_url) +
             '<button class="icon-btn save-heart '+(saved?'active':'')+'" data-savemap="'+idx+'" aria-label="save map" style="position:absolute;">' +
               '<svg width="15" height="15" viewBox="0 0 24 24" fill="'+(saved?'currentColor':'none')+'" stroke="currentColor" stroke-width="2"><path d="M12 21s-6.7-4.35-9.33-8.36C.86 9.9 1.6 6.6 4.3 5.1 6.4 3.94 9 4.5 12 7.5c3-3 5.6-3.56 7.7-2.4 2.7 1.5 3.44 4.8 1.63 7.54C18.7 16.65 12 21 12 21z"/></svg>' +
             '</button>' +
             '<div class="chip-row">' +
               '<span class="city-chip">'+city+'</span>' +
-              '<span class="count-chip">'+m.places.length+' spots</span>' +
+              '<span class="count-chip">'+m.places.length+' places</span>' +
             '</div>' +
           '</div>' +
           '<div class="card-body">' +
+            (m.category ? '<span class="map-category-badge" style="margin-bottom:6px;">'+m.category+'</span>' : '') +
             '<div class="card-title">'+m.map_title+'</div>' +
             '<div class="card-meta">'+(m.subtitle || 'Curated map')+'</div>' +
+            (m.curator_name ? (
+              '<div class="curator-credit">' +
+                '<span class="mini-avatar" style="background:'+colorFor(m.curator_name)+';">'+m.curator_name[0].toUpperCase()+'</span>' +
+                '<span class="curator-name">Curated by '+m.curator_name+'</span>' +
+              '</div>'
+            ) : '') +
           '</div>' +
         '</div>';
     }).join('');
@@ -1164,7 +2420,7 @@
       var tint = tintFor(m.map_title);
       return '<div class="list-card" data-idx="'+idx+'" style="cursor:pointer;">' +
         '<div class="spot-thumb" style="background:linear-gradient(135deg,'+tint[0]+','+tint[1]+');color:'+colorFor(m.map_title)+';">'+m.map_title.charAt(0)+'</div>' +
-        '<div style="flex:1;"><div class="spot-name">'+m.map_title+'</div><div class="card-meta">'+m.places.length+' spots</div></div>' +
+        '<div style="flex:1;"><div class="spot-name">'+m.map_title+'</div><div class="card-meta">'+m.places.length+' places</div></div>' +
         '<button class="mini-icon-btn" data-delmap="'+idx+'" aria-label="remove saved map">' +
           '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0l-1 14a2 2 0 01-2 2H7a2 2 0 01-2-2L4 6"/></svg>' +
         '</button>' +
@@ -1192,7 +2448,7 @@
       return '<div class="saved-spot-row" data-key="'+key+'" style="cursor:pointer;">' +
         '<div class="spot-thumb" '+spotThumbHTML(p)+'</div>' +
         '<div style="flex:1;"><div class="spot-name">'+p.name+'</div><div class="card-meta">'+m.map_title+'</div></div>' +
-        '<button class="mini-icon-btn" data-delspot="'+key+'" aria-label="remove saved spot">' +
+        '<button class="mini-icon-btn" data-delspot="'+key+'" aria-label="remove saved place">' +
           '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0l-1 14a2 2 0 01-2 2H7a2 2 0 01-2-2L4 6"/></svg>' +
         '</button>' +
       '</div>';
@@ -1234,12 +2490,15 @@
     var m = MAPS_DATA.maps[idx];
     var city = m.city || locationFor(m.places);
 
-    document.getElementById('detailCoverArt').innerHTML = renderCoverPhoto(idx);
+    document.getElementById('detailCoverArt').innerHTML = renderCoverPhoto(idx, m.map_title, m.cover_image_url);
     document.getElementById('creatorLine').innerHTML = renderCreatorLine(idx);
     document.getElementById('creatorBlock').innerHTML = renderCreatorBlock(idx);
     document.getElementById('detailTitle').textContent = m.map_title;
+    var catBadgeEl = document.getElementById('detailCategoryBadge');
+    if (m.category){ catBadgeEl.textContent = m.category; catBadgeEl.style.display = 'inline-block'; }
+    else { catBadgeEl.style.display = 'none'; }
     document.getElementById('detailDesc').textContent = m.subtitle || '';
-    document.getElementById('detailMeta').textContent = m.places.length + ' spots · ' + city;
+    document.getElementById('detailMeta').textContent = m.places.length + ' places · ' + city;
 
     var saved = !!savedMaps[idx];
     var saveBtn = document.getElementById('detailSaveBtn');
@@ -1264,18 +2523,40 @@
   }
   document.getElementById('backBtn').addEventListener('click', closeDetail);
 
+  // ---------- 모달 백드롭 (바텀시트 공용: 장소 상세 / 장소 에디터) ----------
+  function updateBackdrop(){
+    var anyOpen = document.getElementById('screen-spot-detail').classList.contains('is-open') ||
+      document.getElementById('screen-spot-editor').classList.contains('is-open');
+    document.getElementById('modalBackdrop').classList.toggle('is-open', anyOpen);
+  }
+  function closeTopModal(){
+    if (document.getElementById('screen-spot-editor').classList.contains('is-open')) closeSpotEditor();
+    if (document.getElementById('screen-spot-detail').classList.contains('is-open')) closeSpotDetail();
+  }
+  // 탭 전환/화면 이동 시 뒤에 남아있는 팝업이 없도록 전부 정리
+  function closeAllOverlays(){
+    closeTopModal();
+    if (document.getElementById('screen-detail').classList.contains('is-open')) closeDetail();
+  }
+  document.getElementById('modalBackdrop').addEventListener('click', closeTopModal);
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'Escape') closeTopModal();
+  });
+
   // ---------- SPOT DETAIL (§8.9) ----------
   var activeSpotMapIdx = null;
   var activeSpotIdx = null;
 
   function renderSpotCoverArt(spot){
-    var tint = tintFor(spot.name || 'spot');
-    var initial = spot.name ? spot.name.charAt(0).toUpperCase() : '?';
-    return '<div style="width:100%;height:100%;background:linear-gradient(135deg,'+tint[0]+','+tint[1]+');display:flex;align-items:center;justify-content:center;">' +
-      '<span style="font-size:60px;font-weight:800;color:'+colorFor(spot.name || 'spot')+';opacity:0.5;">'+initial+'</span></div>';
+    if (spot.image_url){
+      return '<img src="'+spot.image_url+'" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover;">';
+    }
+    return '<img src="'+stockPhotoForSpot(spot)+'" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover;">';
   }
 
   function openSpotDetail(mapIdx, spotIdx){
+    console.trace('[DEBUG] openSpotDetail called with', mapIdx, spotIdx);
+    if (document.getElementById('screen-spot-editor').classList.contains('is-open')) closeSpotEditor();
     activeSpotMapIdx = mapIdx; activeSpotIdx = spotIdx;
     var m = MAPS_DATA.maps[mapIdx];
     var p = m.places[spotIdx];
@@ -1313,14 +2594,17 @@
 
     var screenEl = document.getElementById('screen-spot-detail');
     screenEl.classList.add('is-open');
-    screenEl.scrollTop = 0; // FR-2.11: 진입 시 항상 최상단
+    var sheetInnerEl = screenEl.querySelector('.sheet-inner');
+    if (sheetInnerEl) sheetInnerEl.scrollTop = 0; // FR-2.11: 진입 시 항상 최상단
+    updateBackdrop();
   }
 
   function closeSpotDetail(){
     document.getElementById('screen-spot-detail').classList.remove('is-open');
+    updateBackdrop();
   }
 
-  document.getElementById('spotBackBtn').addEventListener('click', closeSpotDetail);
+  document.getElementById('spotBackBtn').addEventListener('click', closeTopModal);
   document.getElementById('spotPartOf').addEventListener('click', closeSpotDetail);
   document.getElementById('spotShareBtn').addEventListener('click', function(){
     var m = MAPS_DATA.maps[activeSpotMapIdx];
@@ -1433,10 +2717,10 @@
             '<div class="spot-tip">'+(p.tip || p.area || '')+'</div>' +
           '</div>' +
           '<div class="spot-actions">' +
-            '<button class="mini-icon-btn '+(saved?'active':'')+'" data-savespot="'+i+'" aria-label="save spot">' +
+            '<button class="mini-icon-btn '+(saved?'active':'')+'" data-savespot="'+i+'" aria-label="save place">' +
               '<svg viewBox="0 0 24 24" fill="'+(saved?'currentColor':'none')+'" stroke="currentColor" stroke-width="2"><path d="M12 21s-6.7-4.35-9.33-8.36C.86 9.9 1.6 6.6 4.3 5.1 6.4 3.94 9 4.5 12 7.5c3-3 5.6-3.56 7.7-2.4 2.7 1.5 3.44 4.8 1.63 7.54C18.7 16.65 12 21 12 21z"/></svg>' +
             '</button>' +
-            '<button class="mini-icon-btn" data-sharespot="'+i+'" aria-label="share spot">' +
+            '<button class="mini-icon-btn" data-sharespot="'+i+'" aria-label="share place">' +
               '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3v11M8 7l4-4 4 4M5 15v4a2 2 0 002 2h10a2 2 0 002-2v-4"/></svg>' +
             '</button>' +
           '</div>' +
@@ -1583,15 +2867,26 @@
   }
 
   // ---------- TAB BAR ----------
+  function switchTab(name){
+    document.querySelectorAll('.tab-item').forEach(function(t){t.classList.remove('active');});
+    var targetTab = document.querySelector('.tab-item[data-tab="'+name+'"]');
+    if (targetTab) targetTab.classList.add('active');
+    document.querySelectorAll('.app-screen.root').forEach(function(s){s.classList.remove('is-active');});
+    document.getElementById('screen-'+name).classList.add('is-active');
+    if (name === 'my') renderMyContent();
+    closeAllOverlays();
+  }
+
   document.querySelectorAll('.tab-item').forEach(function(tab){
     tab.addEventListener('click', function(){
-      var name = tab.getAttribute('data-tab');
-      document.querySelectorAll('.tab-item').forEach(function(t){t.classList.remove('active');});
-      tab.classList.add('active');
-      document.querySelectorAll('.app-screen.root').forEach(function(s){s.classList.remove('is-active');});
-      document.getElementById('screen-'+name).classList.add('is-active');
-      if (name === 'my') renderMyContent();
-      closeDetail();
+      switchTab(tab.getAttribute('data-tab'));
+    });
+  });
+
+  // SAVED / MY 화면 상단 뒤로가기 버튼 → 홈으로 (화면에 갇히는 현상 개선)
+  document.querySelectorAll('[data-backhome]').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      switchTab('home');
     });
   });
 
@@ -1612,7 +2907,7 @@
     var cityCount = Object.keys(cities).length;
     document.getElementById('heroStats').innerHTML =
       MAPS_DATA.maps.length + ' guides' +
-      '<span class="dot">·</span>' + totalSpots + ' spots' +
+      '<span class="dot">·</span>' + totalSpots + ' places' +
       '<span class="dot">·</span>' + cityCount + ' cities';
   }
 
