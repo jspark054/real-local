@@ -1,6 +1,15 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-5QC5M93GDN"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-5QC5M93GDN');
+</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <meta name="format-detection" content="telephone=no">
@@ -168,6 +177,9 @@
   }
   /* 고정 탭바에 콘텐츠가 가려지지 않도록 하단 여백 확보 */
   .app-screen.root{padding-bottom:74px;}
+  /* 맵 상세/맵 에디터처럼 탭바가 그대로 보이는 전체화면도 동일하게 여백 확보
+     (바텀시트(.sheet)는 별도 방식으로 이미 처리되어 있어서 제외) */
+  .app-screen.detail:not(.sheet){padding-bottom:74px;}
   .tab-item{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:9.5px;color:var(--ink-faint);background:none;border:none;cursor:pointer;padding:2px 14px;}
   .tab-item svg{width:19px;height:19px;stroke:var(--ink-faint);fill:none;stroke-width:1.8;}
   .tab-item.active{color:var(--accent-strong);font-weight:700;}
@@ -1270,11 +1282,30 @@
   async function fetchCreatorMaps(userId){
     var { data, error } = await sb
       .from('maps')
-      .select('id, title, description, city, status, reject_reason, created_at, category')
+      .select('id, title, description, city, status, reject_reason, created_at, category, cover_image_url')
       .eq('creator_id', userId)
       .order('created_at', { ascending: false });
     if (error){ return []; }
     return data || [];
+  }
+
+  // My 화면(크리에이터 맵 목록)의 작은 정사각형 썸네일용.
+  // renderCoverPhoto와 같은 우선순위(실제 커버 사진 → 제목 기준 고정 사진 → 순번 대체)를 쓰되,
+  // list-card의 작은 정사각형 썸네일에 맞게 배경 스타일 문자열로 반환한다.
+  function mapThumbStyle(m, idx){
+    if (m.cover_image_url){
+      return 'background-image:url(\''+m.cover_image_url+'\');background-size:cover;background-position:center;';
+    }
+    var key = normTitle(m.title);
+    var i;
+    if (m.title && Object.prototype.hasOwnProperty.call(TITLE_PHOTO_INDEX, key)){
+      i = TITLE_PHOTO_INDEX[key] % COVER_PHOTOS.length;
+    } else {
+      i = idx % COVER_PHOTOS.length; // 목록에 없는 새 지도(예: 아직 제목만 있는 Draft)는 순번으로 대체
+    }
+    var url = COVER_PHOTOS[i];
+    var pos = COVER_POSITIONS[i] || 'center';
+    return 'background-image:url(\''+url+'\');background-size:cover;background-position:'+pos+';';
   }
 
   function renderMyContent(){
@@ -1334,10 +1365,10 @@
         listEl.innerHTML = '<p style="font-size:12px;color:var(--ink-faint);">No maps yet — create your first one above.</p>';
         return;
       }
-      listEl.innerHTML = maps.map(function(m){
+      listEl.innerHTML = maps.map(function(m, idx){
         return '' +
           '<div class="list-card" data-mapid="'+m.id+'" style="cursor:pointer;">' +
-            '<div class="spot-thumb" style="background:'+colorFor(m.title)+';"></div>' +
+            '<div class="spot-thumb" style="'+mapThumbStyle(m, idx)+'"></div>' +
             '<div style="flex:1;min-width:0;">' +
               '<div class="spot-name">'+m.title+'</div>' +
               '<div class="card-meta" style="margin-bottom:4px;">'+[m.city, m.category].filter(Boolean).join(' · ')+'</div>' +
@@ -1815,7 +1846,7 @@
     el.innerHTML = '<p style="font-size:12px;color:var(--ink-faint);">Loading…</p>';
     var { data, error } = await sb
       .from('maps')
-      .select('id, title, description, city, submitted_at, creator_id, category')
+      .select('id, title, description, city, submitted_at, creator_id, category, cover_image_url')
       .eq('status', 'pending')
       .order('submitted_at', { ascending: true });
     if (error){ el.innerHTML = '<p style="font-size:12px;color:var(--ink-faint);">Could not load review queue.</p>'; return; }
@@ -1824,10 +1855,10 @@
       return;
     }
     data.forEach(function(m){ adminSelectedRegion[m.id] = m.category || ''; });
-    el.innerHTML = data.map(function(m){
+    el.innerHTML = data.map(function(m, idx){
       return '' +
         '<div class="list-card" style="align-items:flex-start;">' +
-          '<div class="spot-thumb" style="background:'+colorFor(m.title)+';"></div>' +
+          '<div class="spot-thumb" style="'+mapThumbStyle(m, idx)+'"></div>' +
           '<div style="flex:1;min-width:0;">' +
             '<div class="spot-name">'+m.title+'</div>' +
             '<div class="card-meta" style="margin-bottom:8px;">'+(m.city || '')+' · '+(m.description || '')+'</div>' +
@@ -1925,7 +1956,7 @@
     el.innerHTML = '<p style="font-size:12px;color:var(--ink-faint);">Loading…</p>';
 
     var query = sb.from('maps')
-      .select('id, title, description, city, status, creator_id, created_at, category, reject_reason')
+      .select('id, title, description, city, status, creator_id, created_at, category, reject_reason, cover_image_url')
       .order('created_at', { ascending: false });
     if (adminMapStatusFilter !== 'all') query = query.eq('status', adminMapStatusFilter);
     if (adminMapSearchTerm) query = query.ilike('title', '%'+adminMapSearchTerm+'%');
@@ -1945,11 +1976,11 @@
       (users || []).forEach(function(u){ emailById[u.id] = u.email; });
     }
 
-    el.innerHTML = data.map(function(m){
+    el.innerHTML = data.map(function(m, idx){
       var creatorLabel = emailById[m.creator_id] || (m.creator_id ? m.creator_id.slice(0, 8) + '…' : 'Unknown');
       return '' +
         '<div class="list-card" style="align-items:flex-start;">' +
-          '<div class="spot-thumb" style="background:'+colorFor(m.title)+';"></div>' +
+          '<div class="spot-thumb" style="'+mapThumbStyle(m, idx)+'"></div>' +
           '<div style="flex:1;min-width:0;">' +
             '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px;">' +
               '<div class="spot-name">'+m.title+'</div>' + statusBadgeHTML(m.status) +
