@@ -1,0 +1,675 @@
+<title>REAL LOCAL — Wireframe &amp; User Flow</title>
+<style>
+  :root{
+    --paper:#F6F6F2;
+    --ink:#1F1F1C;
+    --muted:#87837A;
+    --frame:#1F1F1C;
+    --ph:#E7E6DF;
+    --ph-strong:#CFCDC3;
+    --line:#D9D7CC;
+    --card-bg:#FFFFFF;
+    --annotation:#2F4CC7;
+    --annotation-bg:#EAEDFB;
+    --annotation-border:#C4CCF3;
+  }
+  :root[data-theme="dark"]{
+    --paper:#181815;
+    --ink:#ECEAE2;
+    --muted:#8D8A80;
+    --frame:#ECEAE2;
+    --ph:#2B2B26;
+    --ph-strong:#3C3B33;
+    --line:#37362C;
+    --card-bg:#201F1B;
+    --annotation:#8CA0FF;
+    --annotation-bg:#232A47;
+    --annotation-border:#3B4680;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --paper:#181815;
+      --ink:#ECEAE2;
+      --muted:#8D8A80;
+      --frame:#ECEAE2;
+      --ph:#2B2B26;
+      --ph-strong:#3C3B33;
+      --line:#37362C;
+      --card-bg:#201F1B;
+      --annotation:#8CA0FF;
+      --annotation-bg:#232A47;
+      --annotation-border:#3B4680;
+    }
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:-apple-system,"Segoe UI","Malgun Gothic","Apple SD Gothic Neo",sans-serif;
+    line-height:1.5;
+  }
+  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;}
+
+  .wrap{max-width:1180px;margin:0 auto;padding:48px 24px 100px;}
+
+  header.page{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-end;
+    flex-wrap:wrap;
+    gap:16px;
+    border-bottom:2px solid var(--ink);
+    padding-bottom:20px;
+    margin-bottom:36px;
+  }
+  header.page .kicker{
+    font-size:11px;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:var(--muted);
+    margin:0 0 8px;
+  }
+  header.page h1{
+    font-size:clamp(26px,4.5vw,36px);
+    margin:0;
+    font-weight:800;
+    letter-spacing:-.01em;
+  }
+  header.page p.sub{margin:8px 0 0;color:var(--muted);font-size:14px;max-width:520px;}
+
+  .toggle-btn{
+    font-family:inherit;
+    font-size:12.5px;
+    font-weight:600;
+    background:var(--card-bg);
+    color:var(--ink);
+    border:1.5px solid var(--ink);
+    padding:9px 14px;
+    border-radius:3px;
+    cursor:pointer;
+  }
+  .toggle-btn:hover{background:var(--annotation-bg);}
+  .toggle-btn:focus-visible{outline:2px solid var(--annotation);outline-offset:2px;}
+
+  section.block{margin-bottom:64px;}
+  .section-head{
+    display:flex;
+    align-items:baseline;
+    gap:10px;
+    margin-bottom:18px;
+  }
+  .section-num{
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    font-size:12px;
+    color:var(--muted);
+  }
+  h2{font-size:19px;margin:0;font-weight:800;}
+  p.desc{color:var(--muted);font-size:13.5px;margin:0 0 22px;max-width:640px;}
+
+  /* mermaid containers */
+  .flow-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:16px;
+  }
+  .flow-card{
+    background:var(--card-bg);
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:16px 18px 8px;
+  }
+  .flow-card .flow-title{
+    font-size:12.5px;
+    font-weight:700;
+    letter-spacing:.02em;
+    margin-bottom:4px;
+  }
+  .flow-card .flow-role{
+    display:inline-block;
+    font-size:10px;
+    letter-spacing:.06em;
+    text-transform:uppercase;
+    color:var(--annotation);
+    background:var(--annotation-bg);
+    border:1px solid var(--annotation-border);
+    padding:2px 7px;
+    border-radius:2px;
+    margin-bottom:10px;
+  }
+  .mermaid{font-family:inherit !important;}
+  .diagram-wrap{overflow-x:auto;}
+  .sitemap-card{
+    background:var(--card-bg);
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:18px 20px 10px;
+  }
+
+  /* wireframe gallery */
+  .gallery{
+    display:flex;
+    flex-wrap:wrap;
+    gap:28px;
+    align-items:flex-start;
+  }
+  .phone{
+    width:272px;
+    flex:0 0 auto;
+    border:2px solid var(--frame);
+    border-radius:20px;
+    padding:8px;
+    background:var(--card-bg);
+  }
+  .phone .role-badge{
+    font-size:9.5px;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    color:var(--muted);
+    padding:0 4px 6px;
+  }
+  .phone .screen-name{
+    font-size:13px;
+    font-weight:700;
+    padding:0 4px 8px;
+  }
+  .screen{
+    border:1px solid var(--line);
+    border-radius:10px;
+    background:var(--paper);
+    min-height:480px;
+    padding:10px;
+    position:relative;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+  }
+
+  .topbar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:4px 2px 8px;
+    border-bottom:1px solid var(--line);
+  }
+  .topbar .logo-ph{width:70px;height:12px;background:var(--ph-strong);border-radius:2px;}
+  .topbar .icon-ph{width:20px;height:20px;border:1.5px solid var(--ph-strong);border-radius:50%;}
+  .back-arrow{font-size:16px;color:var(--muted);width:20px;}
+
+  .tabbar{
+    margin-top:auto;
+    display:flex;
+    justify-content:space-around;
+    border-top:1px solid var(--line);
+    padding-top:8px;
+  }
+  .tabbar .tab-item{
+    display:flex;flex-direction:column;align-items:center;gap:4px;
+    font-size:9px;color:var(--muted);
+  }
+  .tabbar .tab-dot{width:16px;height:16px;border-radius:4px;background:var(--ph);}
+  .tabbar .tab-item.active .tab-dot{background:var(--ink);}
+  .tabbar .tab-item.active{color:var(--ink);font-weight:700;}
+
+  .ph-img{
+    background-image:repeating-linear-gradient(45deg,var(--ph),var(--ph) 6px,var(--ph-strong) 6px,var(--ph-strong) 7px);
+    border-radius:5px;
+    position:relative;
+  }
+  .ph-line{height:7px;background:var(--ph-strong);border-radius:2px;}
+  .ph-line.w60{width:60%;}
+  .ph-line.w70{width:70%;}
+  .ph-line.w80{width:80%;}
+  .ph-line.w40{width:40%;}
+  .ph-line.w90{width:90%;}
+  .ph-line.thin{height:5px;background:var(--ph);}
+
+  .card{
+    border:1px solid var(--line);
+    border-radius:6px;
+    padding:7px;
+    display:flex;
+    gap:8px;
+    background:var(--card-bg);
+  }
+  .card .ph-img{width:52px;height:52px;flex:0 0 auto;}
+  .card .card-body{display:flex;flex-direction:column;gap:5px;flex:1;justify-content:center;}
+  .stars{font-size:10px;color:var(--muted);letter-spacing:1px;}
+
+  .btn-ph{
+    border:1.5px solid var(--ink);
+    border-radius:4px;
+    text-align:center;
+    font-size:10px;
+    font-weight:700;
+    padding:6px 4px;
+    color:var(--ink);
+  }
+  .btn-ph.ghost{border-style:dashed;color:var(--muted);border-color:var(--ph-strong);}
+  .btn-row{display:flex;gap:6px;}
+  .btn-row .btn-ph{flex:1;}
+
+  .field-ph{
+    border:1px solid var(--ph-strong);
+    border-radius:4px;
+    padding:8px;
+    background:var(--card-bg);
+  }
+  .field-label{font-size:9px;color:var(--muted);margin-bottom:4px;letter-spacing:.03em;text-transform:uppercase;}
+
+  .map-block{height:120px;position:relative;}
+  .map-block .pin{
+    position:absolute;
+    width:9px;height:9px;
+    border-radius:50% 50% 50% 0;
+    background:var(--ink);
+    transform:rotate(-45deg);
+  }
+  .map-block .label-tag{
+    position:absolute;bottom:4px;left:4px;
+    font-size:8.5px;color:var(--muted);
+    background:var(--card-bg);
+    padding:1px 4px;border-radius:2px;
+  }
+
+  .row{display:flex;gap:8px;align-items:center;}
+  .seg{display:flex;border:1px solid var(--ink);border-radius:5px;overflow:hidden;font-size:10px;font-weight:700;}
+  .seg div{flex:1;text-align:center;padding:6px 0;}
+  .seg div.active{background:var(--ink);color:var(--paper);}
+  .seg div:not(.active){color:var(--muted);}
+
+  .spot-row{display:flex;gap:7px;align-items:center;border-bottom:1px dashed var(--line);padding:6px 0;}
+  .spot-row .ph-img{width:30px;height:30px;flex:0 0 auto;border-radius:4px;}
+  .spot-row .spot-body{flex:1;display:flex;flex-direction:column;gap:4px;}
+  .spot-row .icon-ph{width:14px;height:14px;border-radius:3px;border:1.5px solid var(--ph-strong);}
+
+  .table-ph{border:1px solid var(--line);border-radius:5px;overflow:hidden;font-size:9.5px;}
+  .table-ph .th-row{display:flex;background:var(--ph);font-weight:700;color:var(--muted);}
+  .table-ph .tr-row{display:flex;border-top:1px solid var(--line);}
+  .table-ph .td{flex:1;padding:6px 6px;}
+
+  /* annotation tags */
+  .tag{
+    position:absolute;
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    font-size:8.5px;
+    font-weight:700;
+    color:var(--annotation);
+    background:var(--annotation-bg);
+    border:1px solid var(--annotation-border);
+    padding:1px 5px;
+    border-radius:9px;
+    line-height:1.5;
+    white-space:nowrap;
+    z-index:2;
+  }
+  body.hide-tags .tag{display:none;}
+
+  .legend{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-size:11.5px;
+    color:var(--muted);
+    margin:10px 0 26px;
+  }
+  .legend .swatch{
+    width:14px;height:14px;border-radius:8px;
+    background:var(--annotation-bg);
+    border:1px solid var(--annotation-border);
+  }
+
+  .footline{
+    margin-top:60px;
+    padding-top:16px;
+    border-top:1px solid var(--line);
+    font-size:11.5px;
+    color:var(--muted);
+    display:flex;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:8px;
+  }
+
+  @media (max-width:720px){
+    .flow-grid{grid-template-columns:1fr;}
+  }
+</style>
+
+<div class="wrap">
+
+  <header class="page">
+    <div>
+      <p class="kicker">Wireframe &amp; User Flow · from PRD_REAL_LOCAL.md</p>
+      <h1>REAL LOCAL</h1>
+      <p class="sub">Figma 연동이 불가능한 환경이라 HTML 저해상도 와이어프레임으로 대체했습니다. 파란 태그는 PRD의 기능요구사항 ID(FR-x.x)에 대응합니다.</p>
+    </div>
+    <button class="toggle-btn" id="tagToggle" type="button">주석(FR-ID) 숨기기</button>
+  </header>
+
+  <div class="legend"><span class="swatch"></span> 파란 캡슐 = PRD 기능요구사항 ID 매핑 (예: FR-2.1)</div>
+
+  <!-- ===================== USER FLOW ===================== -->
+  <section class="block">
+    <div class="section-head"><span class="section-num mono">A</span><h2>유저 플로우 (PRD §5)</h2></div>
+    <p class="desc">역할별 핵심 시나리오 4가지. 노드는 화면/상태, 화살표 라벨은 사용자의 액션과 대응 기능ID를 나타냅니다.</p>
+
+    <div class="flow-grid">
+      <div class="flow-card">
+        <div class="flow-role">비로그인</div>
+        <div class="flow-title">5.1 비로그인 탐색</div>
+        <div class="diagram-wrap">
+          <pre class="mermaid">
+flowchart LR
+  A["메인: 맵 목록 (8.1)"] --> B["맵 상세 (8.2)"]
+  B -->|"저장 · 공유 · 후기 시도"| C["로그인 화면 (8.4)"]
+          </pre>
+        </div>
+      </div>
+
+      <div class="flow-card">
+        <div class="flow-role">일반회원</div>
+        <div class="flow-title">5.2 저장 · 공유 · 후기</div>
+        <div class="diagram-wrap">
+          <pre class="mermaid">
+flowchart LR
+  L["로그인 완료"] --> D["맵 상세 (8.2)"]
+  D -->|"맵 저장 FR-4.1"| S1["저장 탭 · 저장한 맵"]
+  D -->|"장소 저장 FR-4.2"| S2["저장 탭 · 저장한 장소"]
+  D -->|"공유 FR-5.1 · 5.2"| SH["공유 링크 복사"]
+  D -->|"후기 작성 FR-6.1"| RV["후기 등록 완료"]
+          </pre>
+        </div>
+      </div>
+
+      <div class="flow-card">
+        <div class="flow-role">크리에이터</div>
+        <div class="flow-title">5.3 맵 · 장소 등록</div>
+        <div class="diagram-wrap">
+          <pre class="mermaid">
+flowchart LR
+  ADM["어드민이 role→creator 부여 FR-8.1"] --> CL["크리에이터 로그인"]
+  CL --> MM["내 맵 관리 (8.5) FR-7.3"]
+  MM -->|"새 맵 만들기 FR-7.1"| NM["맵 생성: 제목 · 한줄설명"]
+  NM -->|"장소 추가 FR-7.2"| SP["장소 등록: 이름 · 주소 · 설명"]
+  SP --> PUB["즉시 노출 — 별도 승인 없음"]
+          </pre>
+        </div>
+      </div>
+
+      <div class="flow-card">
+        <div class="flow-role">어드민</div>
+        <div class="flow-title">5.4 크리에이터 승인</div>
+        <div class="diagram-wrap">
+          <pre class="mermaid">
+flowchart LR
+  AL["어드민 로그인"] --> UM["크리에이터 관리 (8.6)"]
+  UM -->|"유저 검색"| SR["대상 유저 선택"]
+  SR -->|"role 변경 FR-8.1"| CR["크리에이터 권한 부여"]
+  UM -->|"목록 확인 FR-8.2"| CL2["크리에이터별 맵 수 확인"]
+          </pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== SITEMAP ===================== -->
+  <section class="block">
+    <div class="section-head"><span class="section-num mono">B</span><h2>화면 연결 구조 (Sitemap)</h2></div>
+    <p class="desc">아래 §C 와이어프레임 6화면이 실제로 어떻게 연결되는지 한눈에 보는 다이어그램입니다.</p>
+    <div class="sitemap-card">
+      <div class="diagram-wrap">
+        <pre class="mermaid">
+flowchart TD
+  Main["8.1 메인 · 맵 목록"] --> Detail["8.2 맵 상세"]
+  Main --> Saved["8.3 저장 탭"]
+  Detail -->|"비로그인 상태에서 저장 등 시도"| Login["8.4 로그인 · 회원가입"]
+  Saved -->|"비로그인 접근"| Login
+  Login -->|"role = general"| Main
+  Login -->|"role = creator"| MyMaps["8.5 크리에이터 · 내 맵 관리"]
+  Login -->|"role = admin"| Admin["8.6 어드민 · 크리에이터 관리"]
+  MyMaps -->|"맵 생성 후"| Detail
+  Admin -->|"role 변경 완료"| MyMaps
+        </pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== WIREFRAMES ===================== -->
+  <section class="block">
+    <div class="section-head"><span class="section-num mono">C</span><h2>와이어프레임 — 공통 / 일반회원</h2></div>
+    <p class="desc">비로그인 사용자도 접근 가능한 탐색 화면과, 로그인 후 이용하는 저장 기반 화면.</p>
+
+    <div class="gallery">
+
+      <!-- 8.1 메인 -->
+      <div class="phone">
+        <div class="role-badge">공통 · 비로그인 가능</div>
+        <div class="screen-name">8.1 메인 · 맵 목록</div>
+        <div class="screen">
+          <div class="topbar">
+            <div class="logo-ph"></div>
+            <div class="icon-ph"></div>
+          </div>
+          <div class="card" style="position:relative;">
+            <div class="ph-img"></div>
+            <div class="card-body">
+              <div class="ph-line w80"></div>
+              <div class="ph-line thin w60"></div>
+              <div class="stars">★★★★☆</div>
+            </div>
+            <span class="tag" style="top:-8px;right:-6px;">FR-1.1</span>
+          </div>
+          <div class="card"><div class="ph-img"></div><div class="card-body"><div class="ph-line w80"></div><div class="ph-line thin w60"></div><div class="stars">★★★☆☆</div></div></div>
+          <div class="card"><div class="ph-img"></div><div class="card-body"><div class="ph-line w80"></div><div class="ph-line thin w60"></div><div class="stars">★★★★★</div></div></div>
+          <div class="tabbar">
+            <div class="tab-item active"><div class="tab-dot"></div>Home</div>
+            <div class="tab-item"><div class="tab-dot"></div>Saved</div>
+            <div class="tab-item"><div class="tab-dot"></div>My</div>
+          </div>
+          <span class="tag" style="bottom:44px;right:8px;">FR-1.2 · FR-1.3</span>
+        </div>
+      </div>
+
+      <!-- 8.2 맵 상세 -->
+      <div class="phone">
+        <div class="role-badge">공통 · 액션은 로그인 필요</div>
+        <div class="screen-name">8.2 맵 상세</div>
+        <div class="screen">
+          <div class="topbar"><span class="back-arrow">←</span><div class="ph-line w40"></div><div style="width:20px;"></div></div>
+
+          <div class="ph-img map-block">
+            <div class="pin" style="top:30%;left:25%;"></div>
+            <div class="pin" style="top:55%;left:55%;"></div>
+            <div class="pin" style="top:20%;left:70%;"></div>
+            <div class="label-tag">Google Map · pins</div>
+            <span class="tag" style="top:-8px;left:-6px;">FR-2.1</span>
+          </div>
+
+          <div style="position:relative;">
+            <div class="ph-line w90"></div>
+            <div class="ph-line thin w60" style="margin-top:4px;"></div>
+            <span class="tag" style="top:-6px;right:0;">FR-2.4</span>
+          </div>
+
+          <div class="btn-row" style="position:relative;">
+            <div class="btn-ph">Save</div>
+            <div class="btn-ph ghost">Share</div>
+            <span class="tag" style="top:-8px;right:-4px;">FR-4.1 / 5.1</span>
+          </div>
+
+          <div style="position:relative;border-top:1px solid var(--line);padding-top:6px;">
+            <div class="spot-row"><div class="ph-img"></div><div class="spot-body"><div class="ph-line w80"></div><div class="ph-line thin w60"></div></div><div class="icon-ph"></div></div>
+            <div class="spot-row"><div class="ph-img"></div><div class="spot-body"><div class="ph-line w80"></div><div class="ph-line thin w60"></div></div><div class="icon-ph"></div></div>
+            <span class="tag" style="top:-6px;right:0;">FR-2.2 / 5.2</span>
+          </div>
+
+          <div class="field-ph" style="position:relative;">
+            <div class="field-label">Rating + Comment</div>
+            <div class="ph-line w90"></div>
+            <span class="tag" style="top:-8px;right:-4px;">FR-6.1 · 6.2</span>
+          </div>
+
+          <div class="tabbar">
+            <div class="tab-item active"><div class="tab-dot"></div>Home</div>
+            <div class="tab-item"><div class="tab-dot"></div>Saved</div>
+            <div class="tab-item"><div class="tab-dot"></div>My</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 8.3 저장 탭 -->
+      <div class="phone">
+        <div class="role-badge">일반회원 · 로그인 필요</div>
+        <div class="screen-name">8.3 저장 탭</div>
+        <div class="screen">
+          <div class="topbar"><div class="ph-line w40"></div><div class="icon-ph"></div></div>
+
+          <div class="seg" style="position:relative;">
+            <div class="active">Maps</div>
+            <div>Spots</div>
+            <span class="tag" style="top:-8px;right:-4px;">FR-4.3</span>
+          </div>
+
+          <div class="card"><div class="ph-img"></div><div class="card-body"><div class="ph-line w80"></div><div class="ph-line thin w60"></div></div></div>
+          <div class="card"><div class="ph-img"></div><div class="card-body"><div class="ph-line w80"></div><div class="ph-line thin w60"></div></div></div>
+          <div class="card"><div class="ph-img"></div><div class="card-body"><div class="ph-line w80"></div><div class="ph-line thin w60"></div></div></div>
+
+          <div class="tabbar">
+            <div class="tab-item"><div class="tab-dot"></div>Home</div>
+            <div class="tab-item active"><div class="tab-dot"></div>Saved</div>
+            <div class="tab-item"><div class="tab-dot"></div>My</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 8.4 로그인/회원가입 -->
+      <div class="phone">
+        <div class="role-badge">공통 진입점</div>
+        <div class="screen-name">8.4 로그인 / 회원가입</div>
+        <div class="screen">
+          <div class="topbar"><span class="back-arrow">←</span><div class="ph-line w40"></div><div style="width:20px;"></div></div>
+
+          <div class="ph-line w60" style="height:14px;"></div>
+
+          <div class="field-ph"><div class="field-label">Email</div><div class="ph-line w90"></div></div>
+          <div class="field-ph"><div class="field-label">Password</div><div class="ph-line w60"></div></div>
+
+          <div class="btn-ph">Log in</div>
+
+          <div class="ph-line thin w40" style="margin:6px auto;"></div>
+
+          <div class="field-ph" style="position:relative;">
+            <div class="field-label">Sign up · role = general (auto)</div>
+            <div class="ph-line w80"></div>
+            <span class="tag" style="top:-8px;right:-4px;">FR-3.1 · 3.3</span>
+          </div>
+          <div class="btn-ph ghost">Create account</div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="section-head"><span class="section-num mono">D</span><h2>와이어프레임 — 크리에이터</h2></div>
+    <p class="desc">셀프 가입 UI 없음 — 어드민이 부여한 role=creator 계정으로만 진입.</p>
+    <div class="gallery">
+
+      <!-- 8.5a 내 맵 목록 -->
+      <div class="phone">
+        <div class="role-badge">크리에이터 전용</div>
+        <div class="screen-name">8.5 내 맵 관리 · 목록</div>
+        <div class="screen">
+          <div class="topbar"><div class="ph-line w60"></div><div class="icon-ph"></div></div>
+
+          <div class="btn-ph" style="position:relative;">+ New Map
+            <span class="tag" style="top:-8px;right:-4px;">FR-7.1</span>
+          </div>
+
+          <div class="card" style="position:relative;">
+            <div class="ph-img"></div>
+            <div class="card-body"><div class="ph-line w80"></div><div class="ph-line thin w40"></div></div>
+            <div class="icon-ph"></div>
+            <span class="tag" style="top:-8px;right:-6px;">FR-7.3</span>
+          </div>
+          <div class="card"><div class="ph-img"></div><div class="card-body"><div class="ph-line w80"></div><div class="ph-line thin w40"></div></div><div class="icon-ph"></div></div>
+        </div>
+      </div>
+
+      <!-- 8.5b 맵 생성/장소 등록 -->
+      <div class="phone">
+        <div class="role-badge">크리에이터 전용</div>
+        <div class="screen-name">8.5 맵 생성 · 장소 등록</div>
+        <div class="screen">
+          <div class="topbar"><span class="back-arrow">←</span><div class="ph-line w40"></div><div style="width:20px;"></div></div>
+
+          <div class="field-ph"><div class="field-label">Map title</div><div class="ph-line w80"></div></div>
+          <div class="field-ph" style="position:relative;">
+            <div class="field-label">One-line description</div>
+            <div class="ph-line w90"></div>
+            <span class="tag" style="top:-8px;right:-4px;">FR-7.1</span>
+          </div>
+
+          <div class="ph-line thin w40" style="margin-top:4px;"></div>
+
+          <div class="field-ph"><div class="field-label">Spot name</div><div class="ph-line w70"></div></div>
+          <div class="field-ph"><div class="field-label">Address (→ geocoding)</div><div class="ph-line w80"></div></div>
+          <div class="field-ph" style="position:relative;">
+            <div class="field-label">Description</div>
+            <div class="ph-line w90"></div>
+            <span class="tag" style="top:-8px;right:-4px;">FR-7.2</span>
+          </div>
+
+          <div class="btn-ph">Save spot</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="section-head"><span class="section-num mono">E</span><h2>와이어프레임 — 어드민</h2></div>
+    <p class="desc">일반 유저·크리에이터에게는 노출되지 않는 운영 전용 화면.</p>
+    <div class="gallery">
+
+      <div class="phone">
+        <div class="role-badge">어드민 전용</div>
+        <div class="screen-name">8.6 크리에이터 관리</div>
+        <div class="screen">
+          <div class="topbar"><div class="ph-line w60"></div><div class="icon-ph"></div></div>
+
+          <div class="field-ph" style="position:relative;">
+            <div class="field-label">Search user by email</div>
+            <div class="ph-line w90"></div>
+            <span class="tag" style="top:-8px;right:-4px;">FR-8.1</span>
+          </div>
+          <div class="btn-ph">Set role → Creator</div>
+
+          <div class="ph-line thin w40" style="margin-top:6px;"></div>
+
+          <div class="table-ph" style="position:relative;">
+            <div class="th-row"><div class="td">Name</div><div class="td">Email</div><div class="td"># Maps</div></div>
+            <div class="tr-row"><div class="td">Aesop</div><div class="td">a@···</div><div class="td">3</div></div>
+            <div class="tr-row"><div class="td">Nari</div><div class="td">n@···</div><div class="td">1</div></div>
+            <span class="tag" style="top:-8px;right:-4px;">FR-8.2</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <div class="footline">
+    <span>REAL LOCAL · Wireframe &amp; User Flow v1</span>
+    <span>기반 문서: PRD_REAL_LOCAL.md · Figma 미연결 환경 — HTML 대체본</span>
+  </div>
+
+</div>
+
+<script>
+  var btn = document.getElementById('tagToggle');
+  btn.addEventListener('click', function () {
+    var hidden = document.body.classList.toggle('hide-tags');
+    btn.textContent = hidden ? '주석(FR-ID) 보이기' : '주석(FR-ID) 숨기기';
+  });
+</script>
