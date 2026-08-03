@@ -842,7 +842,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
     var { data: spots, error: spotsErr } = await sb
       .from('spots')
-      .select('id, map_id, name, name_ko, category, address, description, lat, lng, maps_url, opening_hours, phone, price_range, sort_order, image_url')
+      .select('id, map_id, name, name_ko, category, address, description, lat, lng, maps_url, opening_hours, phone, price_range, sort_order, image_url, photo_attribution')
       .order('sort_order', { ascending: true });
 
     if (spotsErr){
@@ -866,7 +866,8 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         opening_hours: s.opening_hours || '',
         phone: s.phone || '',
         price_range: s.price_range || '',
-        image_url: s.image_url || ''
+        image_url: s.image_url || '',
+        photo_attribution: (Array.isArray(s.photo_attribution) && s.photo_attribution[0]) ? s.photo_attribution[0] : null
       });
     });
 
@@ -2589,9 +2590,30 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   var activeSpotMapIdx = null;
   var activeSpotIdx = null;
 
+  function escapeHtml(str){
+    return String(str).replace(/[&<>"']/g, function(c){
+      return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c];
+    });
+  }
+
+  // Google Places 사진 사용 시 촬영자 크레딧 표시(정책 권장 사항). 스톡 이미지에는 표시하지 않음.
+  function renderPhotoCredit(spot){
+    if (!spot.image_url || !spot.photo_attribution || !spot.photo_attribution.displayName) return '';
+    var name = escapeHtml(spot.photo_attribution.displayName);
+    var creditStyle = 'position:absolute;bottom:8px;right:10px;max-width:70%;padding:3px 8px;border-radius:999px;' +
+      'background:rgba(255,255,255,.85);font-size:10px;color:var(--ink-faint);white-space:nowrap;overflow:hidden;' +
+      'text-overflow:ellipsis;z-index:2;';
+    var inner = 'Photo by ' + name;
+    if (spot.photo_attribution.uri){
+      return '<a href="'+escapeHtml(spot.photo_attribution.uri)+'" target="_blank" rel="noopener noreferrer" ' +
+        'style="'+creditStyle+'text-decoration:none;display:block;">'+inner+'</a>';
+    }
+    return '<div style="'+creditStyle+'">'+inner+'</div>';
+  }
+
   function renderSpotCoverArt(spot){
     if (spot.image_url){
-      return '<img src="'+spot.image_url+'" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover;">';
+      return '<img src="'+spot.image_url+'" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover;">' + renderPhotoCredit(spot);
     }
     return '<img src="'+stockPhotoForSpot(spot)+'" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover;">';
   }
