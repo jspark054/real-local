@@ -1756,6 +1756,12 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       });
       el.id = 'spotEditorAddressAutocomplete';
       el.placeholder = 'Place name or address (e.g. Euljiro Sindo Restaurant)';
+      el.style.colorScheme = 'light';
+      el.style.setProperty('--gmp-mat-color-surface', 'var(--card)');
+      el.style.setProperty('--gmp-mat-color-on-surface', 'var(--ink)');
+      el.style.setProperty('--gmp-mat-color-on-surface-variant', 'var(--ink-soft)');
+      el.style.setProperty('--gmp-mat-color-outline-decorative', 'var(--line)');
+      el.style.setProperty('--gmp-mat-color-primary', 'var(--accent-strong)');
       bindSpotAutocompleteEvents(el);
       wrap.appendChild(el);
     } catch (err){
