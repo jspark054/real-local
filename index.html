@@ -587,10 +587,8 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                 <textarea id="spotEditorDesc" rows="2" placeholder="Why this place" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1.5px solid var(--line);border-radius:var(--radius-sm);font-size:14px;margin:5px 0 12px;font-family:inherit;resize:vertical;"></textarea>
 
                 <label style="font-size:11px;font-weight:800;color:var(--ink-soft);">Address / place name</label>
-                <div style="display:flex;gap:8px;margin:5px 0 6px;">
-                  <input id="spotEditorAddress" type="text" placeholder="Place name or address (e.g. Euljiro Sindo Restaurant)" style="flex:1;min-width:0;box-sizing:border-box;padding:10px 12px;border:1.5px solid var(--line);border-radius:var(--radius-sm);font-size:14px;font-family:inherit;">
-                  <button type="button" id="spotEditorFindLocBtn" class="btn ghost" style="width:auto;height:42px;box-sizing:border-box;flex-shrink:0;padding:0 16px;font-size:13px;white-space:nowrap;">Find location</button>
-                </div>
+                <div id="spotEditorAddressAutocompleteWrap" style="width:100%;box-sizing:border-box;margin:5px 0 6px;"></div>
+                <input type="hidden" id="spotEditorAddress" value="">
                 <div id="spotEditorLocConfirm" style="font-size:11px;color:var(--accent-strong);font-weight:700;margin-bottom:10px;display:none;">✓ Location confirmed</div>
 
                 <label style="font-size:11px;font-weight:800;color:var(--ink-soft);">Google Maps link (optional)</label>
@@ -1670,8 +1668,9 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     document.getElementById('spotEditorDeleteBtn').style.display = spot ? 'block' : 'none';
 
     var hasLoc = !!(spot && spot.lat != null && spot.lng != null);
-    document.getElementById('spotEditorLocConfirm').style.display = hasLoc ? 'block' : 'none';
+    showSpotLocConfirm(spot ? spot.address : '', hasLoc ? spot.lat : null, hasLoc ? spot.lng : null);
     document.getElementById('spotEditorLatLngWrap').style.display = hasLoc ? 'block' : 'none';
+    resetSpotAddressAutocomplete();
 
     var screenEl = document.getElementById('screen-spot-editor');
     screenEl.classList.add('is-open');
@@ -1711,35 +1710,59 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     }
   });
 
-  // ---------- 무료 주소 검색으로 좌표 찾기 (OpenStreetMap Nominatim, 키/결제 불필요) ----------
-  async function findLocationForSpot(){
-    var query = document.getElementById('spotEditorAddress').value.trim();
-    if (!query){ toast('Please enter a place name or address first.'); return; }
-    var btn = document.getElementById('spotEditorFindLocBtn');
-    var originalText = btn.textContent;
-    btn.textContent = 'Searching…'; btn.disabled = true;
-    try {
-      var url = 'https://nominatim.openstreetmap.org/search?format=json&limit=1&accept-language=ko&q=' + encodeURIComponent(query);
-      var res = await fetch(url);
-      var results = await res.json();
-      if (!results || !results.length){
-        toast('Could not find that location. Try a different search or enter it manually.');
-        return;
+  // ---------- Google Places Autocomplete (PlaceAutocompleteElement) 로 주소/좌표 채우기 ----------
+  function showSpotLocConfirm(address, lat, lng){
+    var el = document.getElementById('spotEditorLocConfirm');
+    if (lat == null || lng == null){
+      el.style.display = 'none';
+      return;
+    }
+    var coordText = Number(lat).toFixed(5) + ', ' + Number(lng).toFixed(5);
+    el.style.display = 'block';
+    el.textContent = address ? ('✓ Location set — ' + address + ' (' + coordText + ')') : ('✓ Location set (' + coordText + ')');
+  }
+  function bindSpotAutocompleteEvents(el){
+    el.addEventListener('gmp-select', async function(e){
+      try {
+        var place = e.placePrediction.toPlace();
+        await place.fetchFields({ fields: ['formattedAddress', 'location'] });
+        var addr = place.formattedAddress || '';
+        var lat = place.location ? place.location.lat() : null;
+        var lng = place.location ? place.location.lng() : null;
+        document.getElementById('spotEditorAddress').value = addr;
+        if (lat != null && lng != null){
+          document.getElementById('spotEditorLat').value = lat;
+          document.getElementById('spotEditorLng').value = lng;
+        }
+        showSpotLocConfirm(addr, lat, lng);
+      } catch (err){
+        console.error('place autocomplete select error:', err);
+        toast('Could not get details for that place. Try again or enter coordinates manually.');
       }
-      var r = results[0];
-      document.getElementById('spotEditorLat').value = parseFloat(r.lat);
-      document.getElementById('spotEditorLng').value = parseFloat(r.lon);
-      document.getElementById('spotEditorLocConfirm').style.display = 'block';
-      document.getElementById('spotEditorLocConfirm').textContent = '✓ Location found';
-      if (r.display_name) document.getElementById('spotEditorAddress').value = r.display_name;
-    } catch (e){
-      console.error('geocode error:', e);
-      toast('Something went wrong searching for that location. Please try again.');
-    } finally {
-      btn.textContent = originalText; btn.disabled = false;
+    });
+  }
+  async function resetSpotAddressAutocomplete(){
+    var wrap = document.getElementById('spotEditorAddressAutocompleteWrap');
+    if (!wrap) return;
+    wrap.innerHTML = '';
+    if (!window.google || !google.maps || !google.maps.importLibrary){
+      wrap.innerHTML = '<div style="font-size:12px;color:var(--ink-faint);padding:10px 0;">Google Maps is still loading — close and reopen this form in a moment, or use manual coordinates / a maps link below.</div>';
+      return;
+    }
+    try {
+      await google.maps.importLibrary('places');
+      var el = new google.maps.places.PlaceAutocompleteElement({
+        includedRegionCodes: ['kr']
+      });
+      el.id = 'spotEditorAddressAutocomplete';
+      el.placeholder = 'Place name or address (e.g. Euljiro Sindo Restaurant)';
+      bindSpotAutocompleteEvents(el);
+      wrap.appendChild(el);
+    } catch (err){
+      console.error('places library load error:', err);
+      wrap.innerHTML = '<div style="font-size:12px;color:var(--ink-faint);padding:10px 0;">Address search unavailable right now. Use manual coordinates or a Google Maps link below.</div>';
     }
   }
-  document.getElementById('spotEditorFindLocBtn').addEventListener('click', findLocationForSpot);
 
   document.getElementById('spotEditorCloseBtn').addEventListener('click', closeTopModal);
 
